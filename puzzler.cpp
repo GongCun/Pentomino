@@ -1,7 +1,9 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <iomanip>
+// #include <iomanip>
+// #include <unordered_map>
+#include <map>
 using namespace std;
 
 const int ROW = 5;
@@ -38,7 +40,7 @@ public:
         return p_[r][0];
     }
 
-    void print(ostream &, unsigned) const;
+    void print(ostream &, vector<unsigned> &) const;
 
     friend ostream & operator << (ostream &o, const Possible &p);
 };
@@ -87,62 +89,83 @@ inline ostream & operator << (ostream &o, const Possible &p) {
     return o;
 }
 
+map<unsigned, char> cell;
 
-void Possible::print(ostream &o, unsigned r) const {
+void Possible::print(ostream &o, vector<unsigned> &select) const {
     for (auto v : p_) {
-        if (v[0] == (int)r) {
+        for (auto r : select) {
+            if (v[0] != (int)r)
+                continue;
+            cout << "r = " << r << endl;
+
+            char c;
             auto s = find(v.begin() + 1, v.begin() + 13, true);
 
             switch (s - v.begin() - 1) {
             case 0:
-                cout << "L: ";
+                // cout << "L: ";
+                c = 'L';
                 break;
             case 1:
-                cout << "P: ";
+                // cout << "P: ";
+                c = 'P';
                 break;
             case 2:
-                cout << "S: ";
+                // cout << "S: ";
+                c = 'S';
                 break;
             case 3:
-                cout << "F: ";
+                // cout << "F: ";
+                c = 'F';
                 break;
-
             case 4:
-                cout << "H: ";
+                // cout << "H: ";
+                c = 'H';
                 break;
             case 5:
-                cout << "Y: ";
+                // cout << "Y: ";
+                c = 'Y';
                 break;
             case 6:
-                cout << "N: ";
+                // cout << "N: ";
+                c = 'N';
                 break;
             case 7:
-                cout << "A: ";
+                // cout << "A: ";
+                c = 'A';
                 break;
             case 8:
-                cout << "V: ";
+                // cout << "V: ";
+                c = 'V';
                 break;
             case 9:
-                cout << "U: ";
+                // cout << "U: ";
+                c = 'U';
                 break;
             case 10:
-                cout << "T: ";
+                // cout << "T: ";
+                c = 'T';
                 break;
             case 11:
-                cout << "W: ";
+                // cout << "W: ";
+                c = 'W';
                 break;
             default:
-                cout << "Unknown: ";
+                // cout << "Unknown: ";
+                c = 'X';
             }
 
-            // cout << v.size() << endl;
             for (unsigned i = 13; i < v.size(); i++) {
                 if (v[i] == true)
-                    cout << "[" << (i-13) / COL << ", " << (i-13) % COL << "] ";
+                    cell[i - 13] = c;
             }
-            cout << endl;
-            return;
         }
+    }
+
+    for (auto i = 0; i < ROW; i++) {
+        for (auto j = 0; j < COL; j++)
+            cout << cell[i * COL + j] << " ";
+        cout << endl;
     }
 }
 
@@ -630,6 +653,7 @@ void solve(Possible p, vector<unsigned> &select) {
     if (p.empty()) {
         if (select.size() == 12) {
             print_solve(select);
+            cell.clear();
             cout << endl;
         }
         return;
@@ -654,9 +678,9 @@ void solve(Possible p, vector<unsigned> &select) {
 Possible possible;
 
 void print_solve(vector<unsigned> &select) {
-    for (auto v : select) {
-        possible.print(cout, v);
-    }
+    // for (auto v : select) {
+        possible.print(cout, select);
+    // }
 }
 
 int main(void) {
