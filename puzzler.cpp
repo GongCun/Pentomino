@@ -31,7 +31,7 @@ public:
 
     bool least_one(vector<unsigned> &vRow);
     void x(unsigned r);
-    bool is_solved() const {
+    bool empty() const {
         return p_.empty();
     }
     unsigned idx(unsigned r) const {
@@ -45,6 +45,9 @@ public:
 
 
 bool Possible::least_one(vector<unsigned> &vRow) {
+    if (p_.empty())
+        return true;
+
     int min = -1, k, c = -1;
     for (unsigned j = 1; j < p_[0].size(); j++) {
         k = 0;
@@ -623,7 +626,7 @@ void Possible::x(unsigned r) {
 }
 
 bool solve(Possible p, vector<unsigned> &select) {
-    if (p.is_solved())
+    if (p.empty() && select.size() == 12)
         return true;
 
     vector<unsigned> vRow;
@@ -645,7 +648,7 @@ bool solve(Possible p, vector<unsigned> &select) {
 
 int main(void) {
     Possible possible;
-    cout << possible << endl;
+    // cout << possible << endl;
     vector<unsigned> select;
 
     if (solve(possible, select))
