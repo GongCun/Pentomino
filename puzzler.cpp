@@ -625,41 +625,45 @@ void Possible::x(unsigned r) {
     }
 }
 
-bool solve(Possible p, vector<unsigned> &select) {
+void print_solve(vector<unsigned> &); 
+void solve(Possible p, vector<unsigned> &select) {
     if (p.empty()) {
-        if (select.size() == 12)
-            return true;
-        else
-            return false;
+        if (select.size() == 12) {
+            print_solve(select);
+            cout << endl;
+        }
+        return;
     }
 
     vector<unsigned> vRow;
 
     if (p.least_one(vRow) == false)
-        return false;
+        return;
 
     for (auto r : vRow) {
         Possible p1(p);
         select.push_back(p1.idx(r));
         p1.x(r);
-        if (solve(p1, select))
-            return true;
+        solve(p1, select);
         select.pop_back();
     }
 
-    return false;
+    // return false;
+}
+
+Possible possible;
+
+void print_solve(vector<unsigned> &select) {
+    for (auto v : select) {
+        possible.print(cout, v);
+    }
 }
 
 int main(void) {
-    Possible possible;
     // cout << possible << endl;
     vector<unsigned> select;
+    solve(possible, select);
 
-    if (solve(possible, select))
-        for (auto v : select) {
-            // cout << v << endl;
-            possible.print(cout, v);
-        }
 }
 
 
