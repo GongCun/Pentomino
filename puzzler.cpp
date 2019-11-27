@@ -33,6 +33,9 @@ public:
 
     bool least_one(vector<unsigned> &vRow);
     void x(unsigned r);
+    bool is_solved() {
+        return p_.empty();
+    }
 
     friend ostream & operator << (ostream &o, const Possible &p);
 };
@@ -618,13 +621,33 @@ void Possible::x(unsigned r) {
     }
 }
 
+bool solve(Possible p, vector<unsigned> &select) {
+    if (p.is_solved())
+        return true;
+
+    vector<unsigned> vRow;
+
+    if (p.least_one(vRow) == false)
+        return false;
+
+    for (auto r : vRow) {
+        Possible p1(p);
+        p1.x(r);
+        select.push_back(r);
+        if (solve(p1, select))
+            return true;
+        select.pop_back();
+    }
+
+    return false;
+}
+
 int main(void) {
     Possible possible;
-    cout << possible << endl;
-    possible.x(0);
-    cout << possible << endl;
-    // possible.x(0);
     // cout << possible << endl;
+    vector<unsigned> select;
+
+    solve(possible, select);
 }
 
 
