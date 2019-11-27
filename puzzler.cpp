@@ -45,8 +45,8 @@ public:
 
 
 bool Possible::least_one(vector<unsigned> &vRow) {
-    if (p_.empty())
-        return true;
+    // if (p_.empty())
+        // return true;
 
     int min = -1, k, c = -1;
     for (unsigned j = 1; j < p_[0].size(); j++) {
@@ -626,8 +626,12 @@ void Possible::x(unsigned r) {
 }
 
 bool solve(Possible p, vector<unsigned> &select) {
-    if (p.empty() && select.size() == 12)
-        return true;
+    if (p.empty()) {
+        if (select.size() == 12)
+            return true;
+        else
+            return false;
+    }
 
     vector<unsigned> vRow;
 
