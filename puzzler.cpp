@@ -1,13 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <iomanip>
+// #include <iomanip>
+// #include <unordered_map>
+#include <map>
 using namespace std;
 
 const int ROW = 5;
 const int COL = 11;
-// const int ROW = 2;
-// const int COL = 3;
 
 class Position {
 public:
@@ -33,11 +33,23 @@ public:
 
     bool least_one(vector<unsigned> &vRow);
     void x(unsigned r);
+    bool empty() const {
+        return p_.empty();
+    }
+    unsigned idx(unsigned r) const {
+        return p_[r][0];
+    }
+
+    void print(ostream &, vector<unsigned> &) const;
 
     friend ostream & operator << (ostream &o, const Possible &p);
 };
 
+
 bool Possible::least_one(vector<unsigned> &vRow) {
+    // if (p_.empty())
+        // return true;
+
     int min = -1, k, c = -1;
     for (unsigned j = 1; j < p_[0].size(); j++) {
         k = 0;
@@ -58,7 +70,6 @@ bool Possible::least_one(vector<unsigned> &vRow) {
     return true;
 }
 
-#if 0
 inline ostream & operator << (ostream &o, const Possible &p) {
     cout << "total: " << p.p_.size() << endl;
 
@@ -77,67 +88,85 @@ inline ostream & operator << (ostream &o, const Possible &p) {
     }
     return o;
 }
-#endif
 
+map<unsigned, char> cell;
 
-inline ostream & operator << (ostream &o, const Possible &p) {
-    cout << "total: " << p.p_.size() << endl;
-    
-    for (auto v : p.p_) {
-        cout << "idx = " << v[0] << " ";
-        auto s = find(v.begin() + 1, v.begin() + 13, true);
+void Possible::print(ostream &o, vector<unsigned> &select) const {
+    for (auto v : p_) {
+        for (auto r : select) {
+            if (v[0] != (int)r)
+                continue;
+            cout << "r = " << r << endl;
 
-        switch (s - v.begin() - 1) {
-        case 0:
-            cout << "L: ";
-            break;
-        case 1:
-            cout << "P: ";
-            break;
-        case 2:
-            cout << "S: ";
-            break;
-        case 3:
-            cout << "F: ";
-            break;
+            char c;
+            auto s = find(v.begin() + 1, v.begin() + 13, true);
 
-        case 4:
-            cout << "H: ";
-            break;
-        case 5:
-            cout << "Y: ";
-            break;
-        case 6:
-            cout << "N: ";
-            break;
-        case 7:
-            cout << "A: ";
-            break;
-        case 8:
-            cout << "V: ";
-            break;
-        case 9:
-            cout << "U: ";
-            break;
-        case 10:
-            cout << "T: ";
-            break;
-        case 11:
-            cout << "W: ";
-            break;
-        default:
-            cout << "Unknown: ";
+            switch (s - v.begin() - 1) {
+            case 0:
+                // cout << "L: ";
+                c = 'L';
+                break;
+            case 1:
+                // cout << "P: ";
+                c = 'P';
+                break;
+            case 2:
+                // cout << "S: ";
+                c = 'S';
+                break;
+            case 3:
+                // cout << "F: ";
+                c = 'F';
+                break;
+            case 4:
+                // cout << "H: ";
+                c = 'H';
+                break;
+            case 5:
+                // cout << "Y: ";
+                c = 'Y';
+                break;
+            case 6:
+                // cout << "N: ";
+                c = 'N';
+                break;
+            case 7:
+                // cout << "A: ";
+                c = 'A';
+                break;
+            case 8:
+                // cout << "V: ";
+                c = 'V';
+                break;
+            case 9:
+                // cout << "U: ";
+                c = 'U';
+                break;
+            case 10:
+                // cout << "T: ";
+                c = 'T';
+                break;
+            case 11:
+                // cout << "W: ";
+                c = 'W';
+                break;
+            default:
+                // cout << "Unknown: ";
+                c = 'X';
+            }
+
+            for (unsigned i = 13; i < v.size(); i++) {
+                if (v[i] == true)
+                    cell[i - 13] = c;
+            }
         }
+    }
 
-        // cout << v.size() << endl;
-        for (unsigned i = 13; i < v.size(); i++) {
-            if (v[i] == true)
-                // cout << "<" << (i-13) / COL << ", " << (i-13) % COL << "> ";
-                cout << (i-13) / COL << "," << (i-13) % COL << " ";
-        }
+    for (auto i = 0; i < ROW; i++) {
+        for (auto j = 0; j < COL; j++)
+            cout << cell[i * COL + j] << " ";
         cout << endl;
     }
-    return o;
 }
 
 class Shape {
@@ -154,9 +183,7 @@ public:
     vector<Position> rotatePiece(const vector<Position> &v);
     vector<Position> symmetryPiece(const vector<Position> &v);
 
-    void saveRotatePieces(void);
     void saveRotatePieces(int);
-    void saveSymmetryPieces(void);
     void saveSymmetryPieces(int);
 
     friend ostream & operator << (ostream &o, const Shape &s);
@@ -181,27 +208,11 @@ vector<Position> Shape::symmetryPiece(const vector<Position> &v) {
     return v_;
 }
 
-void Shape::saveRotatePieces() {
-    pieces.push_back(piece);
-
-    for (auto i = 0; i < 3; i++) {
-        pieces.push_back(rotatePiece(pieces.back()));
-    }
-}
 
 void Shape::saveRotatePieces(int t) {
     pieces.push_back(piece);
 
     for (auto i = 0; i < t; i++) {
-        pieces.push_back(rotatePiece(pieces.back()));
-    }
-}
-
-void Shape::saveSymmetryPieces(void) {
-
-    pieces.push_back(symmetryPiece(piece));
-
-    for (auto i = 0; i < 3; i++) {
         pieces.push_back(rotatePiece(pieces.back()));
     }
 }
@@ -338,8 +349,8 @@ L_shape::L_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 1, y_ + 1));
     piece.push_back(Position(x_ + 1, y_ + 2));
 
-    saveRotatePieces();
-    saveSymmetryPieces();
+    saveRotatePieces(3);
+    saveSymmetryPieces(3);
 
 }
 
@@ -357,8 +368,8 @@ P_shape::P_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 1, y_ + 2));
     piece.push_back(Position(x_ + 1, y_ + 3));
 
-    saveRotatePieces();
-    saveSymmetryPieces();
+    saveRotatePieces(3);
+    saveSymmetryPieces(3);
 
 }
 
@@ -395,8 +406,8 @@ F_shape::F_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 2, y_));
     piece.push_back(Position(x_ + 3, y_));
 
-    saveRotatePieces();
-    saveSymmetryPieces();
+    saveRotatePieces(3);
+    saveSymmetryPieces(3);
 
 }
 
@@ -414,8 +425,8 @@ H_shape::H_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 2, y_));
     piece.push_back(Position(x_ + 2, y_ + 1));
 
-    saveRotatePieces();
-    saveSymmetryPieces();
+    saveRotatePieces(3);
+    saveSymmetryPieces(3);
 
 }
 
@@ -433,8 +444,8 @@ Y_shape::Y_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 1, y_ + 2));
     piece.push_back(Position(x_ + 2, y_ + 1));
 
-    saveRotatePieces();
-    saveSymmetryPieces();
+    saveRotatePieces(3);
+    saveSymmetryPieces(3);
 }
 
 N_shape::N_shape(int x_, int y_) : Shape(x_, y_) {
@@ -452,8 +463,8 @@ N_shape::N_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 2, y_ + 1));
     piece.push_back(Position(x_ + 3, y_ + 1));
 
-    saveRotatePieces();
-    // saveSymmetryPieces();
+    saveRotatePieces(3);
+    saveSymmetryPieces(3);
 }
 
 A_shape::A_shape(int x_, int y_) : Shape(x_, y_) {
@@ -500,7 +511,7 @@ U_shape::U_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 1, y_ + 1));
     piece.push_back(Position(x_ + 1, y_ + 2));
 
-    saveRotatePieces();
+    saveRotatePieces(3);
 }
 
 T_shape::T_shape(int x_, int y_) : Shape(x_, y_) {
@@ -515,7 +526,7 @@ T_shape::T_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_, y_ + 2));
     piece.push_back(Position(x_ + 1, y_ + 1));
 
-    saveRotatePieces();
+    saveRotatePieces(3);
 }
 
 W_shape::W_shape(int x_, int y_) : Shape(x_, y_) {
@@ -532,7 +543,7 @@ W_shape::W_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 1, y_ + 2));
     piece.push_back(Position(x_ + 2, y_ + 2));
 
-    saveRotatePieces();
+    saveRotatePieces(3);
 }
 
 // idx L P S F H Y N A V U T W   0, ..., 54
@@ -638,13 +649,46 @@ void Possible::x(unsigned r) {
     }
 }
 
+void print_solve(vector<unsigned> &); 
+void solve(Possible p, vector<unsigned> &select) {
+    if (p.empty()) {
+        if (select.size() == 12) {
+            print_solve(select);
+            cell.clear();
+            cout << endl;
+        }
+        return;
+    }
+
+    vector<unsigned> vRow;
+
+    if (p.least_one(vRow) == false)
+        return;
+
+    for (auto r : vRow) {
+        Possible p1(p);
+        select.push_back(p1.idx(r));
+        p1.x(r);
+        solve(p1, select);
+        select.pop_back();
+    }
+
+    // return false;
+}
+
+Possible possible;
+
+void print_solve(vector<unsigned> &select) {
+    // for (auto v : select) {
+        possible.print(cout, select);
+    // }
+}
+
 int main(void) {
-    Possible possible;
-    cout << possible << endl;
-    // possible.x(0);
     // cout << possible << endl;
-    // possible.x(0);
-    // cout << possible << endl;
+    vector<unsigned> select;
+    solve(possible, select);
+
 }
 
 
