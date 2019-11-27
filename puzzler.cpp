@@ -1,9 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-// #include <iomanip>
-// #include <unordered_map>
 #include <map>
+#include <memory>
 using namespace std;
 
 const int ROW = 5;
@@ -96,7 +95,7 @@ void Possible::print(ostream &o, vector<unsigned> &select) const {
         for (auto r : select) {
             if (v[0] != (int)r)
                 continue;
-            cout << "r = " << r << endl;
+            // cout << "r = " << r << endl;
 
             char c;
             auto s = find(v.begin() + 1, v.begin() + 13, true);
@@ -650,30 +649,32 @@ void Possible::x(unsigned r) {
 }
 
 void print_solve(vector<unsigned> &); 
-void solve(Possible p, vector<unsigned> &select) {
-    if (p.empty()) {
+unique_ptr<Possible> solve(unique_ptr<Possible> p, vector<unsigned> &select) {
+    if (p->empty()) {
         if (select.size() == 12) {
             print_solve(select);
             cell.clear();
             cout << endl;
         }
-        return;
+        return {};
     }
 
     vector<unsigned> vRow;
 
-    if (p.least_one(vRow) == false)
-        return;
+    if (p->least_one(vRow) == false)
+        return {};
 
     for (auto r : vRow) {
-        Possible p1(p);
-        select.push_back(p1.idx(r));
-        p1.x(r);
-        solve(p1, select);
+        // Possible p1(p);
+        unique_ptr<Possible> p1(new Possible(*p));
+        select.push_back(p1->idx(r));
+        p1->x(r);
+        auto p2 = solve(move(p1), select);
         select.pop_back();
     }
 
     // return false;
+    return {};
 }
 
 Possible possible;
@@ -687,7 +688,8 @@ void print_solve(vector<unsigned> &select) {
 int main(void) {
     // cout << possible << endl;
     vector<unsigned> select;
-    solve(possible, select);
+    // solve(possible, select);
+    solve(unique_ptr<Possible>(new Possible), select);
 
 }
 
