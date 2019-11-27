@@ -6,8 +6,6 @@ using namespace std;
 
 const int ROW = 5;
 const int COL = 11;
-// const int ROW = 2;
-// const int COL = 3;
 
 class Position {
 public:
@@ -33,12 +31,18 @@ public:
 
     bool least_one(vector<unsigned> &vRow);
     void x(unsigned r);
-    bool is_solved() {
+    bool is_solved() const {
         return p_.empty();
     }
+    unsigned idx(unsigned r) const {
+        return p_[r][0];
+    }
+
+    void print(ostream &, unsigned) const;
 
     friend ostream & operator << (ostream &o, const Possible &p);
 };
+
 
 bool Possible::least_one(vector<unsigned> &vRow) {
     int min = -1, k, c = -1;
@@ -81,66 +85,63 @@ inline ostream & operator << (ostream &o, const Possible &p) {
 }
 
 
-#if 0
-inline ostream & operator << (ostream &o, const Possible &p) {
-    cout << "total: " << p.p_.size() << endl;
-    
-    for (auto v : p.p_) {
-        cout << "idx = " << v[0] << " ";
-        auto s = find(v.begin() + 1, v.begin() + 13, true);
+void Possible::print(ostream &o, unsigned r) const {
+    for (auto v : p_) {
+        if (v[0] == (int)r) {
+            auto s = find(v.begin() + 1, v.begin() + 13, true);
 
-        switch (s - v.begin() - 1) {
-        case 0:
-            cout << "L: ";
-            break;
-        case 1:
-            cout << "P: ";
-            break;
-        case 2:
-            cout << "S: ";
-            break;
-        case 3:
-            cout << "F: ";
-            break;
+            switch (s - v.begin() - 1) {
+            case 0:
+                cout << "L: ";
+                break;
+            case 1:
+                cout << "P: ";
+                break;
+            case 2:
+                cout << "S: ";
+                break;
+            case 3:
+                cout << "F: ";
+                break;
 
-        case 4:
-            cout << "H: ";
-            break;
-        case 5:
-            cout << "Y: ";
-            break;
-        case 6:
-            cout << "N: ";
-            break;
-        case 7:
-            cout << "A: ";
-            break;
-        case 8:
-            cout << "V: ";
-            break;
-        case 9:
-            cout << "U: ";
-            break;
-        case 10:
-            cout << "T: ";
-            break;
-        case 11:
-            cout << "W: ";
-            break;
-        default:
-            cout << "Unknown: ";
+            case 4:
+                cout << "H: ";
+                break;
+            case 5:
+                cout << "Y: ";
+                break;
+            case 6:
+                cout << "N: ";
+                break;
+            case 7:
+                cout << "A: ";
+                break;
+            case 8:
+                cout << "V: ";
+                break;
+            case 9:
+                cout << "U: ";
+                break;
+            case 10:
+                cout << "T: ";
+                break;
+            case 11:
+                cout << "W: ";
+                break;
+            default:
+                cout << "Unknown: ";
+            }
+
+            // cout << v.size() << endl;
+            for (unsigned i = 13; i < v.size(); i++) {
+                if (v[i] == true)
+                    cout << "[" << (i-13) / COL << ", " << (i-13) % COL << "] ";
+            }
+            cout << endl;
+            return;
         }
-
-        // cout << v.size() << endl;
-        for (unsigned i = 13; i < v.size(); i++) {
-            if (v[i] == true)
-                cout << "[" << (i-13) / COL << ", " << (i-13) % COL << "] ";
-        }
-        cout << endl;
     }
-    return o;
 }
-#endif
 
 class Shape {
 protected:
@@ -632,8 +633,8 @@ bool solve(Possible p, vector<unsigned> &select) {
 
     for (auto r : vRow) {
         Possible p1(p);
+        select.push_back(p1.idx(r));
         p1.x(r);
-        select.push_back(r);
         if (solve(p1, select))
             return true;
         select.pop_back();
@@ -644,10 +645,14 @@ bool solve(Possible p, vector<unsigned> &select) {
 
 int main(void) {
     Possible possible;
-    // cout << possible << endl;
+    cout << possible << endl;
     vector<unsigned> select;
 
-    solve(possible, select);
+    if (solve(possible, select))
+        for (auto v : select) {
+            // cout << v << endl;
+            possible.print(cout, v);
+        }
 }
 
 
