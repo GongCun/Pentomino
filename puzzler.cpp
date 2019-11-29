@@ -477,7 +477,7 @@ A_shape::A_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 1, y_));
     piece.push_back(Position(x_ + 1, y_ + 1));
 
-    saveRotatePieces(2);
+    saveRotatePieces(3);
 }
 
 V_shape::V_shape(int x_, int y_) : Shape(x_, y_) {
@@ -494,7 +494,7 @@ V_shape::V_shape(int x_, int y_) : Shape(x_, y_) {
     piece.push_back(Position(x_ + 2, y_ + 1));
     piece.push_back(Position(x_ + 2, y_ + 2));
 
-    saveRotatePieces(2);
+    saveRotatePieces(3);
 }
 
 U_shape::U_shape(int x_, int y_) : Shape(x_, y_) {
