@@ -3,10 +3,13 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <unistd.h>
+#include <stdlib.h>
 using namespace std;
 
 const int ROW = 5;
 const int COL = 11;
+int global, runs;
 
 class Position {
 public:
@@ -655,6 +658,8 @@ unique_ptr<Possible> solve(unique_ptr<Possible> p, vector<unsigned> &select) {
             print_solve(select);
             cell.clear();
             cout << endl;
+            if (++global == runs)
+                exit(0);
         }
         return {};
     }
@@ -685,7 +690,8 @@ void print_solve(vector<unsigned> &select) {
     // }
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
+    runs = atoi(argv[1]);
     // cout << possible << endl;
     vector<unsigned> select;
     // solve(possible, select);
