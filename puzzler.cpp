@@ -9,17 +9,29 @@ using namespace std;
 
 const int ROW = 5;
 const int COL = 11;
+
+int nRow;
+int nCol;
 int global, runs;
+
+struct Node {
+    struct Node *left;
+    struct Node *right;
+    struct Node *up;
+    struct Node *down;
+    struct Node *column;
+    int rowID;
+    int colID;
+    int nodeCount;
+};
 
 class Position {
 public:
     int x, y;
     Position() : x(0), y(0) {}
-    
     Position(int x_, int y_) :
         x(x_), y(y_) {}
 
-    // friend class Shape;
     friend ostream & operator << (ostream &o, const Position &p);
 };
 
@@ -29,47 +41,38 @@ inline ostream & operator << (ostream &o, const Position &p) {
 }
 
 class Possible {
-    vector< vector<int> > p_;
+    vector< vector<bool> > p_; // the 0th(first) row is useless, just hold place.
+    vector< vector<Node> > Matrix;
+    Node *header;
+    vector<Node *> solutions;
+    // unsigned nRow, nCol;
+    
+    
 public:
     Possible(void);
 
-    bool least_one(vector<unsigned> &vRow);
-    void x(unsigned r);
-    bool empty() const {
-        return p_.empty();
-    }
-    unsigned idx(unsigned r) const {
-        return p_[r][0];
-    }
-
-    void print(ostream &, vector<unsigned> &) const;
+    Node *least_one(void);
+    void print(ostream &) const;
+    Node *createNodeMatrix();
+    void cover(Node *);
+    void uncover(Node *);
+    void solve(void);
 
     friend ostream & operator << (ostream &o, const Possible &p);
 };
 
 
-bool Possible::least_one(vector<unsigned> &vRow) {
-    // if (p_.empty())
-        // return true;
+Node *Possible::least_one(void) {
+    Node *h = header;
+    Node *min = h->right;
+    h = h->right->right;
+    do {
+        if (h->nodeCount < min->nodeCount)
+            min = h;
+        h = h->right;
+    } while (h != header);
 
-    int min = -1, k, c = -1;
-    for (unsigned j = 1; j < p_[0].size(); j++) {
-        k = 0;
-        for (unsigned i = 0; i < p_.size(); i++) {
-            k += p_[i][j];
-        }
-        if (min == -1 || k < min) {
-            min = k;
-            c = j;
-        }
-    }
-    if (min == 0) return false;
-
-    for (unsigned i = 0; i < p_.size(); i++) {
-        if (p_[i][c])
-            vRow.push_back(i);
-    }
-    return true;
+    return min;
 }
 
 inline ostream & operator << (ostream &o, const Possible &p) {
@@ -93,17 +96,18 @@ inline ostream & operator << (ostream &o, const Possible &p) {
 
 map<unsigned, char> cell;
 
-void Possible::print(ostream &o, vector<unsigned> &select) const {
-    for (auto v : p_) {
-        for (auto r : select) {
-            if (v[0] != (int)r)
-                continue;
+void Possible::print(ostream &o) const {
+    // for (auto v : p_) {
+        for (auto v : solutions) {
+            // if (v[0] != (int)r)
+                // continue;
             // cout << "r = " << r << endl;
+            auto r = v->rowID;
 
             char c;
-            auto s = find(v.begin() + 1, v.begin() + 13, true);
+            auto s = find(p_[r].begin(), p_[r].begin() + 12, true);
 
-            switch (s - v.begin() - 1) {
+            switch (s - p_[r].begin()) {
             case 0:
                 // cout << "L: ";
                 c = 'L';
@@ -157,12 +161,12 @@ void Possible::print(ostream &o, vector<unsigned> &select) const {
                 c = 'X';
             }
 
-            for (unsigned i = 13; i < v.size(); i++) {
-                if (v[i] == true)
-                    cell[i - 13] = c;
+            for (unsigned i = 12; i < p_[r].size(); i++) {
+                if (p_[r][i] == true)
+                    cell[i - 12] = c;
             }
         }
-    }
+    // }
 
     for (auto i = 0; i < ROW; i++) {
         for (auto j = 0; j < COL; j++)
@@ -548,10 +552,14 @@ W_shape::W_shape(int x_, int y_) : Shape(x_, y_) {
     saveRotatePieces(3);
 }
 
-// idx L P S F H Y N A V U T W   0, ..., 54
-// 0   1                    12  13, ..., 67
+// L P S F H Y N A V U T W   0, ..., COL*ROW
+// 0                    11  12, ..., COL*ROW+12
 Possible::Possible() {
-    int idx = 0;
+    header = new Node();
+    vector<bool> _b(COL * ROW + 12, true);
+    p_.push_back(_b);
+    
+    
     for (int i = 0; i < ROW; i++) {
         for (int j = 0; j < COL; j++) {
             vector<Shape *> shapeVec;
@@ -573,12 +581,10 @@ Possible::Possible() {
             for (shape = shapeVec.begin(); shape != shapeVec.end(); ++shape) {
                 for (auto k : (*shape)->pieces) {
                     if (isSafe(k)) {
-                        vector<int> b(68, false);
-                        b[0] = idx++;
-                        // cout << "<" << b[0] << ">" << endl;
-                        b[1 + shape - shapeVec.begin()] = true;
+                        vector<bool> b(COL * ROW + 12, false);
+                        b[shape - shapeVec.begin()] = true;
                         for (auto v : k) {
-                            b[13 + v.x * COL + v.y] = true;
+                            b[12 + v.x * COL + v.y] = true;
                         }
                         p_.push_back(b);
                     }
@@ -589,114 +595,172 @@ Possible::Possible() {
                 delete(*shape);
         }
     }
+
+    nRow = p_.size();
+    nCol = COL * ROW + 12;
+
+    createNodeMatrix();
+
 }
 
-void Possible::x(unsigned r) {
-    vector<unsigned> dr, dc;
 
-    if (p_.empty())
+// Functions to get next index in any direction for given index (circular in
+// nature)
+int getRight(int i) { return (i + 1) % nCol; }
+int getLeft(int i) { return (i - 1 < 0) ? nCol - 1 : i - 1; }
+int getUp(int i) { return (i - 1 < 0) ? nRow - 1 : i - 1; }
+int getDown(int i) { return (i + 1) % nRow; }
+
+
+Node *Possible::createNodeMatrix() {
+    Matrix = vector< vector<Node> >(p_.size());
+    for (auto &v : Matrix)
+        v = vector<Node>(COL * ROW + 12);
+
+    // nRow = p_.size();
+    // nCol = p_[0].size();
+
+    // One extra row for list header nodes for each column.
+    for (auto i = 0; i < nRow; i++) {
+        for (auto j = 0; j < nCol; j++) {
+            if (p_[i][j]) {
+                int a, b;
+
+                if (i)
+                    Matrix[0][j].nodeCount += 1;
+                
+                // Add pointer to column header for this column node.
+                Matrix[i][j].column = &Matrix[0][j];
+
+                // set row and column id of this node
+                Matrix[i][j].rowID = i;
+                Matrix[i][j].colID = j;
+
+                // Link the node with neighbors
+
+                // Left pointer
+                a = i, b = j;
+                do {
+                    b = getLeft(b);
+                } while (!p_[a][b] && b != j);
+                Matrix[i][j].left = &Matrix[i][b];
+
+                // Right pointer
+                a = i, b = j;
+                do {
+                    b = getRight(b);
+                } while (!p_[a][b] && b != j);
+                Matrix[i][j].right = &Matrix[i][b];
+
+                // Up pointer
+                a = i, b = j;
+                do {
+                    a = getUp(a);
+                } while (!p_[a][b] && a != i);
+                Matrix[i][j].up = &Matrix[a][j];
+
+                // Down pointer
+                a = i, b = j;
+                do {
+                    a = getDown(a);
+                } while (!p_[a][b] && a != i);
+                Matrix[i][j].down = &Matrix[a][j];
+            }
+        }
+    }
+
+    // Link header right pointer to column header of first column
+    header->right = &Matrix[0][0];
+
+    // Link header left pointer to column header of last column
+    header->left = &Matrix[0][nCol-1];
+
+    Matrix[0][0].left = header;
+    Matrix[0][nCol-1].right = header;
+    return header;
+}
+
+// Cover the given node completely
+void Possible::cover(Node *targetNode) {
+    // Node *row, *rightNode;
+
+    // get the pointer to the header of column to which this node belong.
+    Node *colNode = targetNode->column;
+
+    // unlink column header from it's neighbors
+    colNode->left->right = colNode->right;
+    colNode->right->left = colNode->left;
+
+    // Move down the column and remove each row by traversing right
+    for (Node *row = colNode->down; row != colNode; row = row->down) {
+        for (Node *rightNode = row->right; rightNode != row;
+             rightNode = rightNode->right) {
+            rightNode->up->down = rightNode->down;
+            rightNode->down->up = rightNode->up;
+
+            Matrix[0][rightNode->colID].nodeCount -= 1;
+        }
+    }
+}
+
+// Uncover the given node completely
+void Possible::uncover(Node *targetNode) {
+    Node *colNode = targetNode->column;
+
+    for (Node *row = colNode->up; row != colNode; row = row->up) {
+        for (Node *leftNode = row->left; leftNode != row;
+             leftNode = leftNode->left) {
+            leftNode->up->down = leftNode;
+            leftNode->down->up = leftNode;
+
+            Matrix[0][leftNode->colID].nodeCount += 1;
+        }
+    }
+
+    // Link the column header from it's neighbors
+    colNode->left->right = colNode;
+    colNode->right->left = colNode;
+}
+
+void Possible::solve(void) {
+
+    if (header->right == header) {
+        print(cout);
+        cell.clear();
+        cout << endl;
+        if (++global == runs)
+            exit(0);
+    }
+
+    Node *column = least_one();
+    if (column == header)
         return;
 
-    for (unsigned j = 1; j < p_[r].size(); j++) {
-        if (p_[r][j]) {
-            dc.push_back(j);
-            for (unsigned i = 0; i < p_.size(); i++) {
-                if (p_[i][j] == true &&
-                    find(dr.begin(), dr.end(), i) == dr.end()) {
-                    // cout << "(" << i << ", " << j << ") ";
-                    dr.push_back(i);
-                }
-            }
-            // cout << endl;
-        }
+    cover(column);
+    for (Node *row = column->down; row != column; row = row->down) {
+        solutions.push_back(row);
+
+        for (Node *rightNode = row->right; rightNode != row;
+             rightNode = rightNode->right)
+            cover(rightNode);
+
+        solve();
+
+        column = row->column;
+        for (Node *leftNode = row->left; leftNode != row;
+             leftNode = leftNode->left)
+            uncover(leftNode);
     }
-
-    sort(dr.begin(), dr.end());
-
-    // for (auto v : dc) {
-    //     cout << "c = " << v << " ";
-    // }
-    // cout  << endl;
-
-    // for (auto v : dr) {
-    //     cout << "r = " << v << " ";
-    // }
-    // cout << endl;
-
-    unsigned i = 0;
-    auto k = dr.begin();
-
-    // delete row from matrix
-    for (auto it = p_.begin(); it != p_.end() && k != dr.end(); ) {
-        if (i++ == *k) {
-            it = p_.erase(it);
-            k++;
-        } else {
-            it++;
-        }
-    }
-
-    // delete column from matrix
-    for (auto &b : p_) {
-        i = 0;
-        k = dc.begin();
-        for (auto it = b.begin(); it != b.end() && k != dc.end(); ) {
-            if (i++ == *k) {
-                it = b.erase(it);
-                k++;
-            } else {
-                it++;
-            }
-        }
-    }
+    uncover(column);
 }
 
-void print_solve(vector<unsigned> &); 
-unique_ptr<Possible> solve(unique_ptr<Possible> p, vector<unsigned> &select) {
-    if (p->empty()) {
-        if (select.size() == 12) {
-            print_solve(select);
-            cell.clear();
-            cout << endl;
-            if (++global == runs)
-                exit(0);
-        }
-        return {};
-    }
-
-    vector<unsigned> vRow;
-
-    if (p->least_one(vRow) == false)
-        return {};
-
-    for (auto r : vRow) {
-        // Possible p1(p);
-        unique_ptr<Possible> p1(new Possible(*p));
-        select.push_back(p1->idx(r));
-        p1->x(r);
-        auto p2 = solve(move(p1), select);
-        select.pop_back();
-    }
-
-    // return false;
-    return {};
-}
-
-Possible possible;
-
-void print_solve(vector<unsigned> &select) {
-    // for (auto v : select) {
-        possible.print(cout, select);
-    // }
-}
 
 int main(int argc, char *argv[]) {
     runs = atoi(argv[1]);
+    
+    Possible possible;
     // cout << possible << endl;
-    vector<unsigned> select;
-    // solve(possible, select);
-    solve(unique_ptr<Possible>(new Possible), select);
-
+    possible.solve();
 }
 
 
