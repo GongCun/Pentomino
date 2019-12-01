@@ -725,9 +725,10 @@ void Possible::uncover(Node *targetNode) {
 void Possible::solve(void) {
 
     if (header->right == header) {
-        print(cout);
-        cell.clear();
-        cout << endl;
+        // print(cout);
+        // cell.clear();
+        // cout << endl;
+        cout << global << endl;
         if (++global == runs)
             exit(0);
     }
