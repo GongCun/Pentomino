@@ -44,7 +44,7 @@ class Possible {
     vector< vector<bool> > p_; // the 0th(first) row is useless, just hold place.
     vector< vector<Node> > Matrix;
     Node *header;
-    vector<Node *> solutions;
+    // vector<Node *> solutions;
     // unsigned nRow, nCol;
     
     
@@ -52,11 +52,11 @@ public:
     Possible(void);
 
     Node *least_one(void);
-    void print(ostream &) const;
+    void print(ostream &, vector<int> &) const;
     Node *createNodeMatrix();
     void cover(Node *);
     void uncover(Node *);
-    void solve(void);
+    void solve(vector<int> &);
 
     friend ostream & operator << (ostream &o, const Possible &p);
 };
@@ -96,77 +96,72 @@ inline ostream & operator << (ostream &o, const Possible &p) {
 
 map<unsigned, char> cell;
 
-void Possible::print(ostream &o) const {
-    // for (auto v : p_) {
-        for (auto v : solutions) {
-            // if (v[0] != (int)r)
-                // continue;
-            // cout << "r = " << r << endl;
-            auto r = v->rowID;
+inline void Possible::print(ostream &o, vector<int> &solutions) const {
+    for (auto r : solutions) {
+        auto v = p_[r];
 
-            char c;
-            auto s = find(p_[r].begin(), p_[r].begin() + 12, true);
+        char c;
+        auto s = find(v.begin(), v.begin() + 12, true);
 
-            switch (s - p_[r].begin()) {
-            case 0:
-                // cout << "L: ";
-                c = 'L';
-                break;
-            case 1:
-                // cout << "P: ";
-                c = 'P';
-                break;
-            case 2:
-                // cout << "S: ";
-                c = 'S';
-                break;
-            case 3:
-                // cout << "F: ";
-                c = 'F';
-                break;
-            case 4:
-                // cout << "H: ";
-                c = 'H';
-                break;
-            case 5:
-                // cout << "Y: ";
-                c = 'Y';
-                break;
-            case 6:
-                // cout << "N: ";
-                c = 'N';
-                break;
-            case 7:
-                // cout << "A: ";
-                c = 'A';
-                break;
-            case 8:
-                // cout << "V: ";
-                c = 'V';
-                break;
-            case 9:
-                // cout << "U: ";
-                c = 'U';
-                break;
-            case 10:
-                // cout << "T: ";
-                c = 'T';
-                break;
-            case 11:
-                // cout << "W: ";
-                c = 'W';
-                break;
-            default:
-                // cout << "Unknown: ";
-                c = 'X';
-            }
-
-            for (unsigned i = 12; i < p_[r].size(); i++) {
-                if (p_[r][i] == true)
-                    cell[i - 12] = c;
-            }
+        switch (s - v.begin()) {
+        case 0:
+            // cout << "L: ";
+            c = 'L';
+            break;
+        case 1:
+            // cout << "P: ";
+            c = 'P';
+            break;
+        case 2:
+            // cout << "S: ";
+            c = 'S';
+            break;
+        case 3:
+            // cout << "F: ";
+            c = 'F';
+            break;
+        case 4:
+            // cout << "H: ";
+            c = 'H';
+            break;
+        case 5:
+            // cout << "Y: ";
+            c = 'Y';
+            break;
+        case 6:
+            // cout << "N: ";
+            c = 'N';
+            break;
+        case 7:
+            // cout << "A: ";
+            c = 'A';
+            break;
+        case 8:
+            // cout << "V: ";
+            c = 'V';
+            break;
+        case 9:
+            // cout << "U: ";
+            c = 'U';
+            break;
+        case 10:
+            // cout << "T: ";
+            c = 'T';
+            break;
+        case 11:
+            // cout << "W: ";
+            c = 'W';
+            break;
+        default:
+            // cout << "Unknown: ";
+            c = 'X';
         }
-    // }
+
+        for (unsigned i = 12; i < v.size(); i++) {
+            if (v[i] == true)
+                cell[i - 12] = c;
+        }
+    }
 
     for (auto i = 0; i < ROW; i++) {
         for (auto j = 0; j < COL; j++)
@@ -722,14 +717,15 @@ void Possible::uncover(Node *targetNode) {
     colNode->right->left = colNode;
 }
 
-void Possible::solve(void) {
+void Possible::solve(vector<int> &solutions) {
 
     if (header->right == header) {
-        // print(cout);
+        // print(cout, solutions);
         // cell.clear();
         // cout << endl;
-        cout << global << endl;
-        if (++global == runs)
+        // cout << global << endl;
+        ++global;
+        if (runs && global == runs)
             exit(0);
     }
 
@@ -739,13 +735,13 @@ void Possible::solve(void) {
 
     cover(column);
     for (Node *row = column->down; row != column; row = row->down) {
-        solutions.push_back(row);
+        solutions.push_back(row->rowID);
 
         for (Node *rightNode = row->right; rightNode != row;
              rightNode = rightNode->right)
             cover(rightNode);
 
-        solve();
+        solve(solutions);
 
         column = row->column;
         for (Node *leftNode = row->left; leftNode != row;
@@ -757,11 +753,13 @@ void Possible::solve(void) {
 
 
 int main(int argc, char *argv[]) {
-    runs = atoi(argv[1]);
+    if (argc > 1) runs = atoi(argv[1]);
     
     Possible possible;
+    vector<int> solutions;
     // cout << possible << endl;
-    possible.solve();
+    possible.solve(solutions);
+    cout << global << endl;
 }
 
 
