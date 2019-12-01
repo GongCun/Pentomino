@@ -101,79 +101,17 @@ inline ostream & operator << (ostream &o, const Possible &p) {
     return o;
 }
 
-map<unsigned, char> cell;
+map<unsigned, char> cell, cellidx;
 
 void Possible::print(ostream &o) const {
-    // for (auto v : p_) {
-        for (auto v : solutions) {
-            // if (v[0] != (int)r)
-                // continue;
-            // cout << "r = " << r << endl;
-            auto r = v->rowID;
-
-            char c;
-            auto s = find(p_[r].begin(), p_[r].begin() + 12, true);
-
-            switch (s - p_[r].begin()) {
-            case 0:
-                // cout << "L: ";
-                c = 'L';
-                break;
-            case 1:
-                // cout << "P: ";
-                c = 'P';
-                break;
-            case 2:
-                // cout << "S: ";
-                c = 'S';
-                break;
-            case 3:
-                // cout << "F: ";
-                c = 'F';
-                break;
-            case 4:
-                // cout << "H: ";
-                c = 'H';
-                break;
-            case 5:
-                // cout << "Y: ";
-                c = 'Y';
-                break;
-            case 6:
-                // cout << "N: ";
-                c = 'N';
-                break;
-            case 7:
-                // cout << "A: ";
-                c = 'A';
-                break;
-            case 8:
-                // cout << "V: ";
-                c = 'V';
-                break;
-            case 9:
-                // cout << "U: ";
-                c = 'U';
-                break;
-            case 10:
-                // cout << "T: ";
-                c = 'T';
-                break;
-            case 11:
-                // cout << "W: ";
-                c = 'W';
-                break;
-            default:
-                // cout << "Unknown: ";
-                c = 'X';
-            }
-
-            for (unsigned i = 12; i < p_[r].size(); i++) {
-                if (p_[r][i] == true)
-                    cell[i - 12] = c;
-            }
+    for (auto v : solutions) {
+        auto r = v->rowID;
+        // for (unsigned i = 12; i < p_[r].size(); i++) {
+        for (auto i = 12; i < nCol; i++) {
+            if (p_[r][i] == true)
+                cell[i - 12] = cellidx[r];
         }
-    // }
+    }
 
     for (auto i = 0; i < ROW; i++) {
         for (auto j = 0; j < COL; j++)
@@ -566,7 +504,21 @@ Possible::Possible() {
     vector<bool> _b(COL * ROW + 12, true);
     p_.push_back(_b);
     
-    
+    unsigned idx = 0;
+    map<unsigned, char> sn; // name of shapes
+    sn[0] = 'L';
+    sn[1] = 'P';
+    sn[2] = 'S';
+    sn[3] = 'F';
+    sn[4] = 'H';
+    sn[5] = 'Y';
+    sn[6] = 'N';
+    sn[7] = 'A';
+    sn[8] = 'V';
+    sn[9] = 'U';
+    sn[10] = 'T';
+    sn[11] = 'W';
+
     for (int i = 0; i < ROW; i++) {
         for (int j = 0; j < COL; j++) {
             vector<Shape *> shapeVec;
@@ -589,7 +541,10 @@ Possible::Possible() {
                 for (auto k : (*shape)->pieces) {
                     if (isSafe(k)) {
                         vector<bool> b(COL * ROW + 12, false);
-                        b[shape - shapeVec.begin()] = true;
+                        auto id = shape - shapeVec.begin();
+                        b[id] = true;
+                        cellidx[++idx] = sn[id];
+                        
                         for (auto v : k) {
                             b[12 + v.x * COL + v.y] = true;
                         }
