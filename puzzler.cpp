@@ -94,73 +94,69 @@ inline ostream & operator << (ostream &o, const Possible &p) {
 map<unsigned, char> cell;
 
 void Possible::print(ostream &o, vector<unsigned> &select) const {
-    for (auto v : p_) {
-        for (auto r : select) {
-            if (v[0] != (int)r)
-                continue;
-            // cout << "r = " << r << endl;
+    for (auto r : select) {
+        auto v = p_[r];
 
-            char c;
-            auto s = find(v.begin() + 1, v.begin() + 13, true);
+        char c;
+        auto s = find(v.begin() + 1, v.begin() + 13, true);
 
-            switch (s - v.begin() - 1) {
-            case 0:
-                // cout << "L: ";
-                c = 'L';
-                break;
-            case 1:
-                // cout << "P: ";
-                c = 'P';
-                break;
-            case 2:
-                // cout << "S: ";
-                c = 'S';
-                break;
-            case 3:
-                // cout << "F: ";
-                c = 'F';
-                break;
-            case 4:
-                // cout << "H: ";
-                c = 'H';
-                break;
-            case 5:
-                // cout << "Y: ";
-                c = 'Y';
-                break;
-            case 6:
-                // cout << "N: ";
-                c = 'N';
-                break;
-            case 7:
-                // cout << "A: ";
-                c = 'A';
-                break;
-            case 8:
-                // cout << "V: ";
-                c = 'V';
-                break;
-            case 9:
-                // cout << "U: ";
-                c = 'U';
-                break;
-            case 10:
-                // cout << "T: ";
-                c = 'T';
-                break;
-            case 11:
-                // cout << "W: ";
-                c = 'W';
-                break;
-            default:
-                // cout << "Unknown: ";
-                c = 'X';
-            }
+        switch (s - v.begin() - 1) {
+        case 0:
+            // cout << "L: ";
+            c = 'L';
+            break;
+        case 1:
+            // cout << "P: ";
+            c = 'P';
+            break;
+        case 2:
+            // cout << "S: ";
+            c = 'S';
+            break;
+        case 3:
+            // cout << "F: ";
+            c = 'F';
+            break;
+        case 4:
+            // cout << "H: ";
+            c = 'H';
+            break;
+        case 5:
+            // cout << "Y: ";
+            c = 'Y';
+            break;
+        case 6:
+            // cout << "N: ";
+            c = 'N';
+            break;
+        case 7:
+            // cout << "A: ";
+            c = 'A';
+            break;
+        case 8:
+            // cout << "V: ";
+            c = 'V';
+            break;
+        case 9:
+            // cout << "U: ";
+            c = 'U';
+            break;
+        case 10:
+            // cout << "T: ";
+            c = 'T';
+            break;
+        case 11:
+            // cout << "W: ";
+            c = 'W';
+            break;
+        default:
+            // cout << "Unknown: ";
+            c = 'X';
+        }
 
-            for (unsigned i = 13; i < v.size(); i++) {
-                if (v[i] == true)
-                    cell[i - 13] = c;
-            }
+        for (unsigned i = 13; i < v.size(); i++) {
+            if (v[i] == true)
+                cell[i - 13] = c;
         }
     }
 
@@ -658,7 +654,7 @@ unique_ptr<Possible> solve(unique_ptr<Possible> p, vector<unsigned> &select) {
             print_solve(select);
             cell.clear();
             cout << endl;
-            if (++global == runs)
+            if (runs && ++global == runs)
                 exit(0);
         }
         return {};
@@ -691,7 +687,7 @@ void print_solve(vector<unsigned> &select) {
 }
 
 int main(int argc, char *argv[]) {
-    runs = atoi(argv[1]);
+    if (argc > 1) runs = atoi(argv[1]);
     // cout << possible << endl;
     vector<unsigned> select;
     // solve(possible, select);
