@@ -39,7 +39,9 @@ inline ostream & operator << (ostream &o, const Position &p) {
     return o;
 }
 
-map<unsigned, char> cell, cellidx;
+// map<unsigned, char> cell, cellidx;
+map<unsigned, char> cell;
+map<unsigned, char> sn; // name of shapes
 vector< vector<bool> > p_;
 vector<Node *> solutions;
 vector< vector<Node> > Matrix;
@@ -93,12 +95,29 @@ inline ostream & operator << (ostream &o, const Possible &p) {
 
 
 void print_solve() {
-    for (auto v : solutions) {
-        auto r = v->rowID;
-        // for (unsigned i = 12; i < p_[r].size(); i++) {
+    for (auto &s : solutions) {
+        auto r = s->rowID;
+        auto &v = p_[r];
+        auto id = find(v.begin(), v.begin() + 12, true) - v.begin();
+
+        char c = sn[id];
+        // char c = (id == 0 ? 'L' :
+        //           id == 1 ? 'P' :
+        //           id == 2 ? 'S' :
+        //           id == 3 ? 'F' :
+        //           id == 4 ? 'H' :
+        //           id == 5 ? 'Y' :
+        //           id == 6 ? 'N' :
+        //           id == 7 ? 'A' :
+        //           id == 8 ? 'V' :
+        //           id == 9 ? 'U' :
+        //           id == 10 ? 'T' :
+        //           id == 11 ? 'W' : '?');
+        
+        
         for (auto i = 12; i < nCol; i++) {
-            if (p_[r][i] == true)
-                cell[i - 12] = cellidx[r];
+            if (v[i] == true)
+                cell[i - 12] = c;
         }
     }
 
@@ -493,8 +512,6 @@ void init() {
     vector<bool> _b(COL * ROW + 12, true);
     p_.push_back(_b);
     
-    unsigned idx = 0;
-    map<unsigned, char> sn; // name of shapes
     sn[0] = 'L';
     sn[1] = 'P';
     sn[2] = 'S';
@@ -530,9 +547,7 @@ void init() {
                 for (auto k : (*shape)->pieces) {
                     if (isSafe(k)) {
                         vector<bool> b(COL * ROW + 12, false);
-                        auto id = shape - shapeVec.begin();
-                        b[id] = true;
-                        cellidx[++idx] = sn[id];
+                        b[shape - shapeVec.begin()] = true;
                         
                         for (auto v : k) {
                             b[12 + v.x * COL + v.y] = true;
@@ -674,6 +689,8 @@ void solve(void) {
         cout << endl;
         if (++global == runs)
             exit(0);
+
+        return;
     }
 
     Node *column = least_one();
