@@ -40,7 +40,7 @@ inline ostream & operator << (ostream &o, const Position &p) {
 }
 
 map<unsigned, char> cell;
-// map<unsigned, char> sn; // name of shapes
+map<unsigned, char> sn; // name of shapes
 vector< vector<bool> > p_;
 vector<Node *> solutions;
 vector< vector<Node> > Matrix;
@@ -99,19 +99,19 @@ void print_solve() {
         auto &v = p_[r];
         auto id = find(v.begin(), v.begin() + 12, true) - v.begin();
 
-        // char c = sn[id];
-        char c = (id == 0 ? 'L' :
-                  id == 1 ? 'P' :
-                  id == 2 ? 'S' :
-                  id == 3 ? 'F' :
-                  id == 4 ? 'H' :
-                  id == 5 ? 'Y' :
-                  id == 6 ? 'N' :
-                  id == 7 ? 'A' :
-                  id == 8 ? 'V' :
-                  id == 9 ? 'U' :
-                  id == 10 ? 'T' :
-                  id == 11 ? 'W' : '?');
+        char c = sn[id];
+        // char c = (id == 0 ? 'L' :
+        //           id == 1 ? 'P' :
+        //           id == 2 ? 'S' :
+        //           id == 3 ? 'F' :
+        //           id == 4 ? 'H' :
+        //           id == 5 ? 'Y' :
+        //           id == 6 ? 'N' :
+        //           id == 7 ? 'A' :
+        //           id == 8 ? 'V' :
+        //           id == 9 ? 'U' :
+        //           id == 10 ? 'T' :
+        //           id == 11 ? 'W' : '?');
         
         
         for (auto i = 12; i < nCol; i++) {
@@ -511,18 +511,18 @@ void init() {
     vector<bool> _b(COL * ROW + 12, true);
     p_.push_back(_b);
     
-    // sn[0] = 'L';
-    // sn[1] = 'P';
-    // sn[2] = 'S';
-    // sn[3] = 'F';
-    // sn[4] = 'H';
-    // sn[5] = 'Y';
-    // sn[6] = 'N';
-    // sn[7] = 'A';
-    // sn[8] = 'V';
-    // sn[9] = 'U';
-    // sn[10] = 'T';
-    // sn[11] = 'W';
+    sn[0] = 'L';
+    sn[1] = 'P';
+    sn[2] = 'S';
+    sn[3] = 'F';
+    sn[4] = 'H';
+    sn[5] = 'Y';
+    sn[6] = 'N';
+    sn[7] = 'A';
+    sn[8] = 'V';
+    sn[9] = 'U';
+    sn[10] = 'T';
+    sn[11] = 'W';
 
     for (int i = 0; i < ROW; i++) {
         for (int j = 0; j < COL; j++) {
