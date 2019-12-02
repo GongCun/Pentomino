@@ -10,8 +10,8 @@ using namespace std;
 const int ROW = 5;
 const int COL = 11;
 
-// int nRow;
-// int nCol;
+int nRow;
+int nCol;
 int global, runs;
 
 struct Node {
@@ -29,8 +29,7 @@ class Position {
 public:
     int x, y;
     Position() : x(0), y(0) {}
-    Position(int x_, int y_) :
-        x(x_), y(y_) {}
+    Position(int x_, int y_) : x(x_), y(y_) {}
 
     friend ostream & operator << (ostream &o, const Position &p);
 };
@@ -40,36 +39,25 @@ inline ostream & operator << (ostream &o, const Position &p) {
     return o;
 }
 
-class Possible {
-    vector< vector<bool> > p_; // the 0th(first) row is useless, just hold place.
-    vector< vector<Node> > Matrix;
-    Node *header;
-    vector<Node *> solutions;
-    int nRow, nCol;
-    
-    
-public:
-    Possible(void);
+map<unsigned, char> cell, cellidx;
+vector< vector<bool> > p_;
+vector<Node *> solutions;
+vector< vector<Node> > Matrix;
+Node *header;
+Node *least_one(void);
+Node *createNodeMatrix();
+void cover(Node *);
+void uncover(Node *);
+void solve(void);
 
-    Node *least_one(void);
-    void print(ostream &) const;
-    Node *createNodeMatrix();
-    void cover(Node *);
-    void uncover(Node *);
-    void solve(void);
-
-// Functions to get next index in any direction for given index (circular in
-// nature)
-    int getRight(int i) { return (i + 1) % nCol; }
-    int getLeft(int i) { return (i - 1 < 0) ? nCol - 1 : i - 1; }
-    int getUp(int i) { return (i - 1 < 0) ? nRow - 1 : i - 1; }
-    int getDown(int i) { return (i + 1) % nRow; }
-
-    friend ostream & operator << (ostream &o, const Possible &p);
-};
+int getRight(int i) { return (i + 1) % nCol; }
+int getLeft(int i) { return (i - 1 < 0) ? nCol - 1 : i - 1; }
+int getUp(int i) { return (i - 1 < 0) ? nRow - 1 : i - 1; }
+int getDown(int i) { return (i + 1) % nRow; }
 
 
-Node *Possible::least_one(void) {
+
+Node *least_one(void) {
     Node *h = header;
     Node *min = h->right;
     h = h->right->right;
@@ -82,8 +70,9 @@ Node *Possible::least_one(void) {
     return min;
 }
 
+#if 0
 inline ostream & operator << (ostream &o, const Possible &p) {
-    cout << "total: " << p.p_.size() << endl;
+    cout << "total: " << p_.size() << endl;
 
     // for (unsigned i = 0; i < p.p_[0].size(); i++) {
     //     cout << setw(2);
@@ -91,7 +80,7 @@ inline ostream & operator << (ostream &o, const Possible &p) {
     // }
     // cout << endl;
 
-    for (auto v : p.p_) {
+    for (auto v : p_) {
         for (auto i : v) {
             // cout << setw(2);
             cout << i << " ";
@@ -100,10 +89,10 @@ inline ostream & operator << (ostream &o, const Possible &p) {
     }
     return o;
 }
+#endif
 
-map<unsigned, char> cell, cellidx;
 
-void Possible::print(ostream &o) const {
+void print_solve() {
     for (auto v : solutions) {
         auto r = v->rowID;
         // for (unsigned i = 12; i < p_[r].size(); i++) {
@@ -121,12 +110,12 @@ void Possible::print(ostream &o) const {
 }
 
 class Shape {
-protected:
+// protected:
+public:
     Position position;
     vector<Position> piece;
     vector < vector<Position> > pieces;
     
-public:
     Shape(int x_, int y_);
 
     static Position rotate(Position c, Position p);
@@ -499,7 +488,7 @@ W_shape::W_shape(int x_, int y_) : Shape(x_, y_) {
 
 // L P S F H Y N A V U T W   0, ..., COL*ROW
 // 0                    11  12, ..., COL*ROW+12
-Possible::Possible() {
+void init() {
     header = new Node();
     vector<bool> _b(COL * ROW + 12, true);
     p_.push_back(_b);
@@ -567,7 +556,7 @@ Possible::Possible() {
 
 
 
-Node *Possible::createNodeMatrix() {
+Node *createNodeMatrix() {
     Matrix = vector< vector<Node> >(p_.size());
     for (auto &v : Matrix)
         v = vector<Node>(COL * ROW + 12);
@@ -636,7 +625,7 @@ Node *Possible::createNodeMatrix() {
 }
 
 // Cover the given node completely
-void Possible::cover(Node *targetNode) {
+void cover(Node *targetNode) {
     // Node *row, *rightNode;
 
     // get the pointer to the header of column to which this node belong.
@@ -659,7 +648,7 @@ void Possible::cover(Node *targetNode) {
 }
 
 // Uncover the given node completely
-void Possible::uncover(Node *targetNode) {
+void uncover(Node *targetNode) {
     Node *colNode = targetNode->column;
 
     for (Node *row = colNode->up; row != colNode; row = row->up) {
@@ -677,10 +666,10 @@ void Possible::uncover(Node *targetNode) {
     colNode->right->left = colNode;
 }
 
-void Possible::solve(void) {
+void solve(void) {
 
     if (header->right == header) {
-        print(cout);
+        print_solve();
         cell.clear();
         cout << endl;
         if (++global == runs)
@@ -713,9 +702,11 @@ void Possible::solve(void) {
 int main(int argc, char *argv[]) {
     runs = atoi(argv[1]);
     
-    Possible possible;
+    // Possible possible;
+    init();
+    
     // cout << possible << endl;
-    possible.solve();
+    solve();
 }
 
 
