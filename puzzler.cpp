@@ -721,7 +721,7 @@ void solve(void) {
 
 
 int main(int argc, char *argv[]) {
-    runs = atoi(argv[1]);
+    if (argc > 1) runs = atoi(argv[1]);
     
     // Possible possible;
     init();
