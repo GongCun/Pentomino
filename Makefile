@@ -1,6 +1,6 @@
 CC = g++
-# CFLAGS = -g -pg -Wall --std=c++0x
-CFLAGS = -Ofast --std=c++0x
+CFLAGS = -pg -Wall --std=c++0x
+# CFLAGS = -Ofast --std=c++0x
 PROG = puzzler
 TEMPFILES = core core.* *.o temp.* *.out *~
 
