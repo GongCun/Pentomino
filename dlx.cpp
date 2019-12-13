@@ -205,12 +205,15 @@ void DLX::distribute(unsigned k) {
             Qnode &q = queue[cur++];
             DLX dlx(q.possible_);
 
-            if (level == k) {
-                cout << "start" << endl;
-                dlx.print();
-                cout << "end" << endl;
-                continue;
-            }
+            // if (level == k) {
+            //     cout << "start" << endl;
+            //     dlx.print();
+            //     cout << "end" << endl;
+            //     continue;
+            // }
+            cout << "start" << endl;
+            dlx.print();
+            cout << "end" << endl;
 
             Node *column = dlx.leastOne();
             if (column == dlx.header) continue;
@@ -218,10 +221,11 @@ void DLX::distribute(unsigned k) {
             dlx.cover(column);
             for (Node *row = column->down; row != column; row = row->down) {
                 vector<int> s(q.solutions_);
+                cout << "cover " << row->rowID << endl;
                 s.push_back(row->rowID);
 
                 for (Node *rightNode = row->right; rightNode != row; rightNode = rightNode->right) {
-                    cout << "cover " << rightNode->rowID << ", " << rightNode->colID << endl;
+                    // cout << "cover " << rightNode->rowID << ", " << rightNode->colID << endl;
                     dlx.cover(rightNode);
                 }
 
