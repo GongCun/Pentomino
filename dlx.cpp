@@ -157,3 +157,89 @@ bool DLX::solve(vector<Node *>& solutions) {
     uncover(column);
     return false;
 }
+
+//
+vector< vector<bool> > DLX::dlx2possible() {
+    vector< vector<bool> >p(nRow, vector<bool>(nCol, false));
+    p[0] = vector<bool>(nCol, true);
+    
+    // Node *h = header;
+    for (Node *col = header->right; col != header; col = col->right) {
+        for (Node *row = col->down; row != col; row = row->down)
+            p[row->rowID][row->colID] = true;
+    }
+
+    return p;
+}
+
+//
+void DLX::print() {
+    for (Node *col = header->right; col != header; col = col->right) {
+        for (Node *row = col->down; row != col; row = row->down)
+            // p[row->rowID][row->colID] = true;
+            cout << row->rowID << ", " << row->colID << endl;
+    }
+}
+
+//
+void DLX::distribute(unsigned k) {
+    if (header->right == header)
+        return;
+
+    vector<Qnode> queue;
+    vector<int> solutions;
+
+    Qnode qnode = {
+        .possible_ = dlx2possible(),
+        .solutions_ = solutions
+    };
+
+    queue.push_back(qnode);
+    unsigned cur = 0, last = 1, level = 0;
+
+    while (cur < queue.size()) {
+        cout << "level = " << level << endl;
+        last = queue.size();
+
+        while (cur < last) {
+            Qnode &q = queue[cur++];
+            DLX dlx(q.possible_);
+
+            if (level == k) {
+                cout << "start" << endl;
+                dlx.print();
+                cout << "end" << endl;
+                continue;
+            }
+
+            Node *column = dlx.leastOne();
+            if (column == dlx.header) continue;
+            
+            dlx.cover(column);
+            for (Node *row = column->down; row != column; row = row->down) {
+                vector<int> s(q.solutions_);
+                s.push_back(row->rowID);
+
+                for (Node *rightNode = row->right; rightNode != row; rightNode = rightNode->right) {
+                    cout << "cover " << rightNode->rowID << ", " << rightNode->colID << endl;
+                    dlx.cover(rightNode);
+                }
+
+                Qnode qnode1 = {
+                    .possible_ = dlx.dlx2possible(),
+                    .solutions_ = s
+                };
+                queue.push_back(qnode1);
+
+                column = row->column;
+
+                for (Node *leftNode = row->left; leftNode != row; leftNode = leftNode->left)
+                    dlx.uncover(leftNode);
+            }
+
+            // cur++;
+        }
+        level++;
+        // if (++level > k) return;
+    }
+}
