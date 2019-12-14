@@ -54,13 +54,37 @@ DLX::DLX(vector< vector<bool> >& p_) {
     }
 
     // Link header right pointer to column header of first column
-    header->right = &matrix[0][0];
+    int a, b;
+    
+    for (a = 0; a != nCol; a++) {
+        if (matrix[0][a].nodeCount > 0) {
+            break;
+        }
+    }
 
+    if (a != nCol) {
+        header->right = &matrix[0][a];
+        matrix[0][a].left = header;
+    } else {
+        header->right = header;
+        header->left = header;
+    }
+
+    
     // Link header left pointer to column header of last column
-    header->left = &matrix[0][nCol - 1];
+    for (b = nCol - 1; b != -1; b--) {
+        if (matrix[0][b].nodeCount > 0)
+            break;
+    }
 
-    matrix[0][0].left = header;
-    matrix[0][nCol - 1].right = header;
+    if (b != -1) {
+        header->left = &matrix[0][b];
+        matrix[0][b].right = header;
+    } else {
+        header->left = header;
+        header->right = header;
+    }
+
 }
 
 Node *DLX::leastOne(void) {
@@ -68,7 +92,8 @@ Node *DLX::leastOne(void) {
     Node *min = h->right;
     h = h->right->right;
     do {
-        if (h->nodeCount && h->nodeCount < min->nodeCount)
+        // if (h->nodeCount > 0 && h->nodeCount < min->nodeCount)
+        if (h->nodeCount < min->nodeCount)
             min = h;
         h = h->right;
     } while (h != header);
@@ -224,8 +249,10 @@ void DLX::distribute(unsigned k) {
                 // cout << endl;
                 
                 dlx.print();
-                if (dlx.solve(q.solutions_))
+                if (dlx.solve(q.solutions_)) {
+                    cout <<"solutions: ";
                     print_solve(q.solutions_);
+                }
 
                 cout << "end" << endl;
                 continue;
