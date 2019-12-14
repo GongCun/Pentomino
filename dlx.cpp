@@ -243,10 +243,10 @@ void DLX::distribute(unsigned k) {
             if (level == k) {
                 cout << "start" << endl;
 
-                // cout << ">> ";
-                // for (auto &v : q.solutions_)
-                //     cout << v << " ";
-                // cout << endl;
+                cout << ">> ";
+                for (auto &v : q.solutions_)
+                    cout << v << " ";
+                cout << endl;
                 
                 dlx.print();
                 if (dlx.solve(q.solutions_)) {

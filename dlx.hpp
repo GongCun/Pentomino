@@ -19,6 +19,11 @@ struct Node {
     int nodeCount;
 };
 
+struct Qnode {
+    vector< vector<bool> > possible_;
+    vector<int> solutions_;
+};
+
 class DLX {
     
     int nCol, nRow;
@@ -31,7 +36,10 @@ public:
     Node *leastOne(void);
     void cover(Node *);
     void uncover(Node *);
-    bool solve(vector<Node *>&);
+    bool solve(vector<int>&);
+    vector< vector<bool> > dlx2possible();
+    void distribute(unsigned);
+    void print();
 
     int getRight(int i) { return (i + 1) % nCol; }
     int getLeft(int i) { return (i - 1 < 0) ? nCol - 1 : i - 1; }
