@@ -161,11 +161,11 @@ bool DLX::solve(vector<int>& solutions) {
 //
 vector< vector<bool> > DLX::dlx2possible() {
     vector< vector<bool> >p(nRow, vector<bool>(nCol, false));
-    p[0] = vector<bool>(nCol, true);
+    // p[0] = vector<bool>(nCol, true);
     
     // Node *h = header;
     for (Node *col = header->right; col != header; col = col->right) {
-        // p[0][col->colID] = true;
+        p[0][col->colID] = true;
         for (Node *row = col->down; row != col; row = row->down)
             p[row->rowID][row->colID] = true;
     }
@@ -210,22 +210,22 @@ void DLX::distribute(unsigned k) {
         last = queue.size();
 
         while (cur < last) {
+            // cout <<"hello"<<endl;
+            
             Qnode &q = queue[cur++];
             DLX dlx(q.possible_);
 
             if (level == k) {
                 cout << "start" << endl;
 
-                cout << ">> ";
-                for (auto &v : q.solutions_)
-                    cout << v << " ";
-                cout << endl;
+                // cout << ">> ";
+                // for (auto &v : q.solutions_)
+                //     cout << v << " ";
+                // cout << endl;
                 
                 dlx.print();
                 if (dlx.solve(q.solutions_))
-                    cout << "!! success" << endl;
-                
-                    // print_solve(q.solutions_);
+                    print_solve(q.solutions_);
 
                 cout << "end" << endl;
                 continue;
