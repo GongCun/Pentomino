@@ -68,7 +68,7 @@ Node *DLX::leastOne(void) {
     Node *min = h->right;
     h = h->right->right;
     do {
-        if (h->nodeCount < min->nodeCount)
+        if (h->nodeCount && h->nodeCount < min->nodeCount)
             min = h;
         h = h->right;
     } while (h != header);
@@ -124,7 +124,7 @@ void DLX::uncover(Node *targetNode) {
 //     o << endl;
 // }
 
-bool DLX::solve(vector<Node *>& solutions) {
+bool DLX::solve(vector<int>& solutions) {
     if (header->right == header) {
         // if (solutions.size() == 81)
         //     return true;
@@ -140,7 +140,7 @@ bool DLX::solve(vector<Node *>& solutions) {
     cover(column);
 
     for (Node *row = column->down; row != column; row = row->down) {
-        solutions.push_back(row);
+        solutions.push_back(row->rowID);
 
         for (Node *rightNode = row->right; rightNode != row;
              rightNode = rightNode->right)
@@ -165,6 +165,7 @@ vector< vector<bool> > DLX::dlx2possible() {
     
     // Node *h = header;
     for (Node *col = header->right; col != header; col = col->right) {
+        // p[0][col->colID] = true;
         for (Node *row = col->down; row != col; row = row->down)
             p[row->rowID][row->colID] = true;
     }
@@ -181,6 +182,12 @@ void DLX::print() {
     }
 }
 
+static void print_solve(vector<int>& s) {
+    for (auto &v : s)
+        cout << v << " ";
+    cout << endl;
+}
+
 //
 void DLX::distribute(unsigned k) {
     if (header->right == header)
@@ -194,32 +201,51 @@ void DLX::distribute(unsigned k) {
         .solutions_ = solutions
     };
 
+
     queue.push_back(qnode);
     unsigned cur = 0, last = 1, level = 0;
 
     while (cur < queue.size()) {
-        cout << "level = " << level << endl;
+        cout << "a level = " << level << endl;
         last = queue.size();
 
         while (cur < last) {
             Qnode &q = queue[cur++];
             DLX dlx(q.possible_);
 
-            // if (level == k) {
-            //     cout << "start" << endl;
-            //     dlx.print();
-            //     cout << "end" << endl;
-            //     continue;
-            // }
-            cout << "start" << endl;
-            dlx.print();
-            cout << "end" << endl;
+            if (level == k) {
+                cout << "start" << endl;
+
+                cout << ">> ";
+                for (auto &v : q.solutions_)
+                    cout << v << " ";
+                cout << endl;
+                
+                dlx.print();
+                if (dlx.solve(q.solutions_))
+                    cout << "!! success" << endl;
+                
+                    // print_solve(q.solutions_);
+
+                cout << "end" << endl;
+                continue;
+            }
 
             Node *column = dlx.leastOne();
             if (column == dlx.header) continue;
+            // for (Node *h = dlx.header->right; h != dlx.header; h = h->right) {
+            //     cout << "h: " << h << " count: " << h->nodeCount << endl;
+            // }
+            
+            // cout << "b level = " << level << endl;
             
             dlx.cover(column);
+            // cout << column << " " << column << endl;
+            // cout << "count " << column->nodeCount << endl;
+            
             for (Node *row = column->down; row != column; row = row->down) {
+                // cout << "hello" << endl;
+                
                 vector<int> s(q.solutions_);
                 cout << "cover " << row->rowID << endl;
                 s.push_back(row->rowID);
