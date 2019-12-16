@@ -53,38 +53,6 @@ DLX::DLX(vector< vector<bool> >& p_) {
         }
     }
 
-    // // Link header right pointer to column header of first column
-    // int a, b;
-    
-    // for (a = 0; a != nCol; a++) {
-    //     if (matrix[0][a].nodeCount > 0) {
-    //         break;
-    //     }
-    // }
-
-    // if (a != nCol) {
-    //     header->right = &matrix[0][a];
-    //     matrix[0][a].left = header;
-    // } else {
-    //     header->right = header;
-    //     header->left = header;
-    // }
-
-    
-    // // Link header left pointer to column header of last column
-    // for (b = nCol - 1; b != -1; b--) {
-    //     if (matrix[0][b].nodeCount > 0)
-    //         break;
-    // }
-
-    // if (b != -1) {
-    //     header->left = &matrix[0][b];
-    //     matrix[0][b].right = header;
-    // } else {
-    //     header->left = header;
-    //     header->right = header;
-    // }
-
     // Link header right pointer to column header of first column
     header->right = &matrix[0][0];
 
@@ -202,30 +170,6 @@ DLX::DLX(Node *h, int nCol_, int nRow_, vector<int>& solutions_) :
     for (auto &v : matrix)
         v = vector<Node>(nCol);
 
-    // for (Node *col = h->right; col != h; col = col->right) {
-    //     cout << h << endl;
-        
-    //     Node *row = col;
-    //     do {
-    //         Node &n = matrix[row->rowID][row->colID];
-    //         n.column = &matrix[0][row->colID];
-    //         n.rowID = row->rowID;
-    //         n.colID = row->colID;
-    //         n.up = &matrix[row->up->rowID][row->colID];
-    //         n.down = &matrix[row->down->rowID][row->colID];
-
-    //         Node *node = row;
-    //         do {
-    //             Node &n_ = matrix[node->rowID][node->colID];
-    //             n_.left = &matrix[node->rowID][node->left->colID];
-    //             n_.right = &matrix[node->rowID][node->right->colID];
-    //             node = node->right;
-    //         } while (node != row);
-
-    //         row = row->down;
-    //     } while (row != col);
-    // }
-
     for (Node *col = h->right; col != h; col = col->right) {
         Node *row = col;
         do {
@@ -238,21 +182,8 @@ DLX::DLX(Node *h, int nCol_, int nRow_, vector<int>& solutions_) :
             n.up     = &matrix[row->up->rowID][row->colID];
             n.down   = &matrix[row->down->rowID][row->colID];
 
-
-            // cout << "row = " << row->rowID << "; col = " << col->colID << endl;
-            // // cout << "col->right->colID = " << col->right->colID << endl;
-            // cout << "row->up->rowID = " << row->up->rowID << endl;
-            // cout << "row->down->rowID = " << row->down->rowID << endl;
-            // cout << "address: " << &n << endl;
-            // cout << "left: " << n.left << endl;
-            // cout << "right: " << n.right << endl;
-            // cout << "up: " << n.up  << endl;
-            // cout << "down: " << n.down << endl;
-
             row = row->down;
         } while (row != col);
-        
-        cout << endl;
     }
 
     if (h->right != h) {
@@ -265,24 +196,13 @@ DLX::DLX(Node *h, int nCol_, int nRow_, vector<int>& solutions_) :
         header->left = header;
     }
 
-    // cout << "print start" << endl;
-    // for (Node *col = header->right; col != header; col = col->right) {
-    //     for (Node *row = col->down; row != col; row = row->down)
-    //         cout << row->rowID << ", " << row->colID << endl;
-    // }
-    // print();
-    // cout << "print end" << endl;
 }
 
 
 //
 void DLX::print() {
     cout << "print start" << endl;
-    cout << "header: " << header << endl;
-    cout << "col: " << header->right << endl;
-    
     for (Node *col = header->right; col != header; col = col->right) {
-        cout << "hello" << endl;
         for (Node *row = col->down; row != col; row = row->down)
             cout << row->rowID << ", " << row->colID << endl;
     }
@@ -290,9 +210,13 @@ void DLX::print() {
 }
 
 static void print_solve(vector<int>& s) {
-    for (auto &v : s)
-        cout << v << " ";
-    cout << endl;
+    if (!s.empty()) {
+        for (auto &v : s)
+            cout << v << " ";
+        cout << endl;
+    } else {
+        cout << "solutions is empty" << endl;
+    }
 }
 
 //
@@ -312,23 +236,20 @@ void distribute(unsigned k, DLX* root) {
         while (cur < last) {
 
             DLX*& q = queue[cur++];
-            q->print();
             DLX dlx(q->header, q->nCol, q->nRow, q->solutions);
+            delete q;
 
             if (level == k) {
-                // cout << "start" << endl;
-
-                cout << ">> ";
-                cout << "initial solutions: ";
-                print_solve(dlx.solutions);
-                dlx.print();
+                // cout << ">> initial solutions: ";
+                // print_solve(dlx.solutions);
+                // dlx.print();
 
                 if (dlx.solve()) {
                     cout <<"final solutions: ";
                     print_solve(dlx.solutions);
+                } else {
+                    cout <<"no solutions" << endl;
                 }
-
-                cout << "end" << endl;
                 continue;
             }
 
@@ -339,31 +260,22 @@ void distribute(unsigned k, DLX* root) {
             
             for (Node *row = column->down; row != column; row = row->down) {
                 
-                cout << "cover " << row->rowID << endl;
+                // cout << "cover " << row->rowID << endl;
                 dlx.solutions.push_back(row->rowID);
 
                 for (Node *rightNode = row->right; rightNode != row; rightNode = rightNode->right) {
                     dlx.cover(rightNode);
                 }
 
-                // DLX dlx1(dlx.header, dlx.nCol, dlx.nRow, dlx.solutions);
-                cout << "345: dlx.print()" << endl;
-                cout << "dlx.header: " << dlx.header << endl;
-                dlx.print();
-                
                 queue.push_back(new DLX(dlx.header, dlx.nCol, dlx.nRow, dlx.solutions));
 
-                cout << "pop" << endl;
                 dlx.solutions.pop_back();
                 column = row->column;
 
                 for (Node *leftNode = row->left; leftNode != row; leftNode = leftNode->left)
                     dlx.uncover(leftNode);
             }
-
-            // cur++;
         }
         level++;
-        // if (++level > k) return;
     }
 }
