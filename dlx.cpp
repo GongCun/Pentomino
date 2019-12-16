@@ -1,5 +1,7 @@
 #include "dlx.hpp"
 
+static int global;
+
 DLX::DLX(vector< vector<bool> >& p_) {
 
     nRow = p_.size();
@@ -69,7 +71,6 @@ Node *DLX::leastOne(void) {
     Node *min = h->right;
     h = h->right->right;
     do {
-        // if (h->nodeCount > 0 && h->nodeCount < min->nodeCount)
         if (h->nodeCount < min->nodeCount)
             min = h;
         h = h->right;
@@ -127,17 +128,26 @@ void DLX::uncover(Node *targetNode) {
 // }
 
 bool DLX::solve() {
+    // cout << "solve()" << endl;
+    bool success = false;
+
     if (header->right == header) {
         // if (solutions.size() == 81)
         //     return true;
         // else
         //     return false;
+        print_solve(cout, solutions);
+        // For testing in singleton mode
+        if (++global == runs)
+            exit(0);
         return true;
     }
 
     Node *column = leastOne();
-    if (column == header)
-        return false;
+    // if (column == header) {
+    //     cout << "false1" << endl;
+    //     return false;
+    // }
 
     cover(column);
 
@@ -148,7 +158,8 @@ bool DLX::solve() {
              rightNode = rightNode->right)
             cover(rightNode);
 
-        if (solve()) return true;
+        // if (solve()) return true;
+        if (solve()) success = true;
 
         solutions.pop_back();
         column = row->column;
@@ -157,27 +168,27 @@ bool DLX::solve() {
             uncover(leftNode);
     }
     uncover(column);
-    return false;
+    return success;
 }
 
 //
-DLX::DLX(Node *h, int nCol_, int nRow_, vector<int>& solutions_) :
+DLX::DLX(Node*& h, int& nCol_, int& nRow_, vector<int>& solutions_) :
     nCol(nCol_), nRow(nRow_),  solutions(solutions_) {
 
     header = new Node();
 
-    matrix = vector< vector<Node> >(nRow);
-    for (auto &v : matrix)
-        v = vector<Node>(nCol);
+    matrix = vector< vector<Node> >(nRow, vector<Node>(nCol));
+    // for (auto &v : matrix)
+        // v = vector<Node>(nCol);
 
     for (Node *col = h->right; col != h; col = col->right) {
         Node *row = col;
         do {
             Node &n     = matrix[row->rowID][row->colID];
-            n.column    = &matrix[0][row->colID];
+            n.nodeCount = row->nodeCount;
             n.rowID     = row->rowID;
             n.colID     = row->colID;
-            n.nodeCount = row->nodeCount;
+            n.column    = &matrix[0][row->colID];
             n.left      = &matrix[row->rowID][row->left->colID];
             n.right     = &matrix[row->rowID][row->right->colID];
             n.up        = &matrix[row->up->rowID][row->colID];
@@ -203,39 +214,22 @@ DLX::DLX(Node *h, int nCol_, int nRow_, vector<int>& solutions_) :
 //
 void DLX::print() {
     cout << "print start" << endl;
-    // for (Node *col = header->right; col != header; col = col->right) {
-    //     for (Node *row = col->down; row != col; row = row->down)
-    //         cout << row->rowID << ", " << row->colID << endl;
-    // }
-    cout << "header: " << header << endl;
-    cout << "left: " << header->left << endl;
-    cout << "right: " << header->right << endl;
-    cout << endl;
-    for (int i = 0; i < nRow; i++) {
-        for (int j = 0; j < nCol; j++) {
-            cout << i << ", " << j << endl;
-            cout << "address: " << &matrix[i][j] << endl;
-            cout << "rowID: " << matrix[i][j].rowID << endl;
-            cout << "colID: " << matrix[i][j].colID << endl;
-            cout << "left: " << matrix[i][j].left << endl;
-            cout << "right: " << matrix[i][j].right << endl;
-            cout << "up: " << matrix[i][j].up << endl;
-            cout << "down: " << matrix[i][j].down << endl;
-        }
-        cout << endl;
+    for (Node *col = header->right; col != header; col = col->right) {
+        for (Node *row = col->down; row != col; row = row->down)
+            cout << row->rowID << ", " << row->colID << endl;
     }
     cout << "print end" << endl;
 }
 
-static void print_solve(vector<int>& s) {
-    if (!s.empty()) {
-        for (auto &v : s)
-            cout << v << " ";
-        cout << endl;
-    } else {
-        cout << "solutions is empty" << endl;
-    }
-}
+// static void print_solve(vector<int>& s) {
+//     if (!s.empty()) {
+//         for (auto &v : s)
+//             cout << v << " ";
+//         cout << endl;
+//     } else {
+//         cout << "solutions is empty" << endl;
+//     }
+// }
 
 //
 void distribute(unsigned k, DLX* root) {
@@ -251,55 +245,62 @@ void distribute(unsigned k, DLX* root) {
         cout << "level = " << level << endl;
         last = queue.size();
 
+        auto t = last - cur;
+        
+        cout << "level count = " << last - cur << endl;
+
         while (cur < last) {
 
-            DLX*& q = queue[cur++];
-            // q->print();
-            // if (q->solve())
-            //     print_solve(q->solutions);
-            // cout << endl;
+            DLX* q = queue[cur++];
+            // if (q->solve()) {
+            //     print_solve(cout, q->solutions);
+            // }
+            // return;
 
-            DLX dlx(q->header, q->nCol, q->nRow, q->solutions);
-            // dlx.print();
+            // DLX dlx(q->header, q->nCol, q->nRow, q->solutions);
+            // delete q;
 
-            delete q;
-
-            if (level == k) {
+            // if (level == k) {
+            if (t >= k) {
                 // cout << ">> initial solutions: ";
                 // print_solve(dlx.solutions);
                 // dlx.print();
 
-                if (dlx.solve()) {
-                    cout <<"final solutions: ";
-                    print_solve(dlx.solutions);
-                } else {
-                    cout <<"no solutions" << endl;
-                }
+                // if (q->solve()) {
+                //     // cout <<"final solutions: ";
+                //     print_solve(cout, q->solutions);
+                // } else {
+                //     cout <<"no solutions" << endl;
+                // }
+                q->solve();
+                delete q;
                 continue;
             }
 
-            Node *column = dlx.leastOne();
-            if (column == dlx.header) continue;
+            Node *column = q->leastOne();
+            if (column == q->header) continue;
 
-            dlx.cover(column);
+            q->cover(column);
             
             for (Node *row = column->down; row != column; row = row->down) {
                 
                 // cout << "cover " << row->rowID << endl;
-                dlx.solutions.push_back(row->rowID);
+                q->solutions.push_back(row->rowID);
 
                 for (Node *rightNode = row->right; rightNode != row; rightNode = rightNode->right) {
-                    dlx.cover(rightNode);
+                    q->cover(rightNode);
                 }
 
-                queue.push_back(new DLX(dlx.header, dlx.nCol, dlx.nRow, dlx.solutions));
+                queue.push_back(new DLX(q->header, q->nCol, q->nRow, q->solutions));
+                // cout << "queue.size: " << queue.size() << endl;
 
-                dlx.solutions.pop_back();
+                q->solutions.pop_back();
                 column = row->column;
 
                 for (Node *leftNode = row->left; leftNode != row; leftNode = leftNode->left)
-                    dlx.uncover(leftNode);
+                    q->uncover(leftNode);
             }
+            delete q;
         }
         level++;
     }

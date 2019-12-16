@@ -1,10 +1,12 @@
-#include <iostream>
-#include <vector>
-#include <algorithm>
+// #include <iostream>
+// #include <vector>
+// #include <algorithm>
+// #include <map>
+// #include <memory>
+// #include <unistd.h>
+// #include <stdlib.h>
+#include "dlx.hpp"
 #include <map>
-#include <memory>
-#include <unistd.h>
-#include <stdlib.h>
 using namespace std;
 
 const int ROW = 5;
@@ -12,18 +14,7 @@ const int COL = 11;
 
 int nRow;
 int nCol;
-int global, runs;
-
-struct Node {
-    struct Node *left;
-    struct Node *right;
-    struct Node *up;
-    struct Node *down;
-    struct Node *column;
-    int rowID;
-    int colID;
-    int nodeCount;
-};
+int runs;
 
 class Position {
 public:
@@ -42,60 +33,11 @@ inline ostream & operator << (ostream &o, const Position &p) {
 map<unsigned, char> cell;
 map<unsigned, char> sn; // name of shapes
 vector< vector<bool> > p_;
-vector<Node *> solutions;
-vector< vector<Node> > Matrix;
-Node *header;
-Node *least_one(void);
-Node *createNodeMatrix();
-void cover(Node *);
-void uncover(Node *);
-void solve(void);
-
-int getRight(int i) { return (i + 1) % nCol; }
-int getLeft(int i) { return (i - 1 < 0) ? nCol - 1 : i - 1; }
-int getUp(int i) { return (i - 1 < 0) ? nRow - 1 : i - 1; }
-int getDown(int i) { return (i + 1) % nRow; }
 
 
-
-Node *least_one(void) {
-    Node *h = header;
-    Node *min = h->right;
-    h = h->right->right;
-    do {
-        if (h->nodeCount < min->nodeCount)
-            min = h;
-        h = h->right;
-    } while (h != header);
-
-    return min;
-}
-
-#if 0
-inline ostream & operator << (ostream &o, const Possible &p) {
-    cout << "total: " << p_.size() << endl;
-
-    // for (unsigned i = 0; i < p.p_[0].size(); i++) {
-    //     cout << setw(2);
-    //     cout << i << " ";
-    // }
-    // cout << endl;
-
-    for (auto v : p_) {
-        for (auto i : v) {
-            // cout << setw(2);
-            cout << i << " ";
-        }
-        cout << endl;
-    }
-    return o;
-}
-#endif
-
-
-void print_solve() {
-    for (auto &s : solutions) {
-        auto r = s->rowID;
+void print_solve(ostream &o, vector<int>& solutions) {
+    for (auto &r : solutions) {
+        // auto r = s->rowID;
         auto &v = p_[r];
         auto id = find(v.begin(), v.begin() + 12, true) - v.begin();
 
@@ -122,9 +64,10 @@ void print_solve() {
 
     for (auto i = 0; i < ROW; i++) {
         for (auto j = 0; j < COL; j++)
-            cout << cell[i * COL + j] << " ";
-        cout << endl;
+            o << cell[i * COL + j] << " ";
+        o << endl;
     }
+    o << endl;
 }
 
 class Shape {
@@ -507,7 +450,6 @@ W_shape::W_shape(int x_, int y_) : Shape(x_, y_) {
 // L P S F H Y N A V U T W   0, ..., COL*ROW
 // 0                    11  12, ..., COL*ROW+12
 void init() {
-    header = new Node();
     vector<bool> _b(COL * ROW + 12, true);
     p_.push_back(_b);
     
@@ -564,170 +506,22 @@ void init() {
     nRow = p_.size();
     nCol = COL * ROW + 12;
 
-    createNodeMatrix();
-
 }
 
 
-
-Node *createNodeMatrix() {
-    Matrix = vector< vector<Node> >(p_.size());
-    for (auto &v : Matrix)
-        v = vector<Node>(COL * ROW + 12);
-
-    // nRow = p_.size();
-    // nCol = p_[0].size();
-
-    // One extra row for list header nodes for each column.
-    for (auto i = 0; i < nRow; i++) {
-        for (auto j = 0; j < nCol; j++) {
-            if (p_[i][j]) {
-                int a, b;
-
-                if (i)
-                    Matrix[0][j].nodeCount += 1;
-                
-                // Add pointer to column header for this column node.
-                Matrix[i][j].column = &Matrix[0][j];
-
-                // set row and column id of this node
-                Matrix[i][j].rowID = i;
-                Matrix[i][j].colID = j;
-
-                // Link the node with neighbors
-
-                // Left pointer
-                a = i, b = j;
-                do {
-                    b = getLeft(b);
-                } while (!p_[a][b] && b != j);
-                Matrix[i][j].left = &Matrix[i][b];
-
-                // Right pointer
-                a = i, b = j;
-                do {
-                    b = getRight(b);
-                } while (!p_[a][b] && b != j);
-                Matrix[i][j].right = &Matrix[i][b];
-
-                // Up pointer
-                a = i, b = j;
-                do {
-                    a = getUp(a);
-                } while (!p_[a][b] && a != i);
-                Matrix[i][j].up = &Matrix[a][j];
-
-                // Down pointer
-                a = i, b = j;
-                do {
-                    a = getDown(a);
-                } while (!p_[a][b] && a != i);
-                Matrix[i][j].down = &Matrix[a][j];
-            }
-        }
-    }
-
-    // Link header right pointer to column header of first column
-    header->right = &Matrix[0][0];
-
-    // Link header left pointer to column header of last column
-    header->left = &Matrix[0][nCol-1];
-
-    Matrix[0][0].left = header;
-    Matrix[0][nCol-1].right = header;
-    return header;
-}
-
-// Cover the given node completely
-void cover(Node *targetNode) {
-    // Node *row, *rightNode;
-
-    // get the pointer to the header of column to which this node belong.
-    Node *colNode = targetNode->column;
-
-    // unlink column header from it's neighbors
-    colNode->left->right = colNode->right;
-    colNode->right->left = colNode->left;
-
-    // Move down the column and remove each row by traversing right
-    for (Node *row = colNode->down; row != colNode; row = row->down) {
-        for (Node *rightNode = row->right; rightNode != row;
-             rightNode = rightNode->right) {
-            rightNode->up->down = rightNode->down;
-            rightNode->down->up = rightNode->up;
-
-            Matrix[0][rightNode->colID].nodeCount -= 1;
-        }
-    }
-}
-
-// Uncover the given node completely
-void uncover(Node *targetNode) {
-    Node *colNode = targetNode->column;
-
-    for (Node *row = colNode->up; row != colNode; row = row->up) {
-        for (Node *leftNode = row->left; leftNode != row;
-             leftNode = leftNode->left) {
-            leftNode->up->down = leftNode;
-            leftNode->down->up = leftNode;
-
-            Matrix[0][leftNode->colID].nodeCount += 1;
-        }
-    }
-
-    // Link the column header from it's neighbors
-    colNode->left->right = colNode;
-    colNode->right->left = colNode;
-}
-
-void solve(void) {
-
-    if (header->right == header) {
-        // if (solutions.size() == 12) {
-            
-        // cout << solutions.size() << endl;
-        print_solve();
-        cell.clear();
-        cout << endl;
-        if (++global == runs)
-            exit(0);
-        // }
-
-        return;
-    }
-
-    Node *column = least_one();
-    if (column == header)
-        return;
-
-    cover(column);
-    for (Node *row = column->down; row != column; row = row->down) {
-        solutions.push_back(row);
-
-        for (Node *rightNode = row->right; rightNode != row;
-             rightNode = rightNode->right)
-            cover(rightNode);
-
-        solve();
-
-        solutions.pop_back();
-        column = row->column;
-        for (Node *leftNode = row->left; leftNode != row;
-             leftNode = leftNode->left)
-            uncover(leftNode);
-    }
-    uncover(column);
-}
 
 
 int main(int argc, char *argv[]) {
-    if (argc > 1) runs = atoi(argv[1]);
-    
+    // if (argc > 1) runs = atoi(argv[1]);
+    int k = 0;
+    if (argc > 1) k = atoi(argv[1]);
+    if (argc > 2) runs = atoi(argv[2]);
     // Possible possible;
     init();
     
     // cout << possible << endl;
-    solve();
+    // solve();
+    distribute(k, new DLX(p_));
 }
 
 
