@@ -19,26 +19,30 @@ struct Node {
     int nodeCount;
 };
 
-struct Qnode {
-    vector< vector<bool> > possible_;
-    vector<int> solutions_;
-};
 
 class DLX {
     
-    int nCol, nRow;
-    Node *header;
-    vector< vector<Node> > matrix;
-
 public:
+    Node *header;
+    int nCol, nRow;
+    vector< vector<Node> > matrix;
+    vector<int> solutions;
 
     DLX(vector< vector<bool> >& p_);
+    DLX(Node *, int, int, vector<int>&);
+    ~DLX() {
+        delete header;
+        header = NULL;
+    }
+
+    // void free() {
+    //     this->DLX::~DLX();
+    // }
+    
     Node *leastOne(void);
     void cover(Node *);
     void uncover(Node *);
-    bool solve(vector<int>&);
-    vector< vector<bool> > dlx2possible();
-    void distribute(unsigned);
+    bool solve();
     void print();
 
     int getRight(int i) { return (i + 1) % nCol; }
@@ -48,4 +52,5 @@ public:
 
 };
 
+void distribute(unsigned, DLX*);
 #endif
