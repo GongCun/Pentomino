@@ -53,37 +53,46 @@ DLX::DLX(vector< vector<bool> >& p_) {
         }
     }
 
+    // // Link header right pointer to column header of first column
+    // int a, b;
+    
+    // for (a = 0; a != nCol; a++) {
+    //     if (matrix[0][a].nodeCount > 0) {
+    //         break;
+    //     }
+    // }
+
+    // if (a != nCol) {
+    //     header->right = &matrix[0][a];
+    //     matrix[0][a].left = header;
+    // } else {
+    //     header->right = header;
+    //     header->left = header;
+    // }
+
+    
+    // // Link header left pointer to column header of last column
+    // for (b = nCol - 1; b != -1; b--) {
+    //     if (matrix[0][b].nodeCount > 0)
+    //         break;
+    // }
+
+    // if (b != -1) {
+    //     header->left = &matrix[0][b];
+    //     matrix[0][b].right = header;
+    // } else {
+    //     header->left = header;
+    //     header->right = header;
+    // }
+
     // Link header right pointer to column header of first column
-    int a, b;
-    
-    for (a = 0; a != nCol; a++) {
-        if (matrix[0][a].nodeCount > 0) {
-            break;
-        }
-    }
+    header->right = &matrix[0][0];
 
-    if (a != nCol) {
-        header->right = &matrix[0][a];
-        matrix[0][a].left = header;
-    } else {
-        header->right = header;
-        header->left = header;
-    }
-
-    
     // Link header left pointer to column header of last column
-    for (b = nCol - 1; b != -1; b--) {
-        if (matrix[0][b].nodeCount > 0)
-            break;
-    }
+    header->left = &matrix[0][nCol - 1];
 
-    if (b != -1) {
-        header->left = &matrix[0][b];
-        matrix[0][b].right = header;
-    } else {
-        header->left = header;
-        header->right = header;
-    }
+    matrix[0][0].left = header;
+    matrix[0][nCol - 1].right = header;
 
 }
 
