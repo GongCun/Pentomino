@@ -194,27 +194,6 @@ DLX::DLX(Node *h, int nCol_, int nRow_, vector<int>& solutions_) :
         v = vector<Node>(nCol);
 
     for (Node *col = h->right; col != h; col = col->right) {
-        // for (Node *row = col->down; row != col; row = row->down) {
-        //         Node &n  = matrix[row->rowID][col->colID];
-        //         n.column = &matrix[0][col->colID];
-        //         n.rowID  = row->rowID;
-        //         n.colID  = col->colID;
-        //         n.left   = &matrix[row->rowID][col->left->colID];
-        //         n.right  = &matrix[row->rowID][col->right->colID];
-        //         n.up     = &matrix[row->up->rowID][col->colID];
-        //         n.down   = &matrix[row->down->rowID][col->colID];
-
-
-        //         cout << "row = " << row->rowID << "; col = " << col->colID << endl;
-        //         cout << "col->right->colID = " << col->right->colID << endl;
-        //         cout << "row->right->colID = " << row->right->colID << endl;
-        //         cout << "address: " << &n << endl;
-        //         cout << "left: " << n.left << endl;
-        //         cout << "right: " << n.right << endl;
-        //         cout << "up: " << n.up  << endl;
-        //         cout << "down: " << n.down << endl;
-        // }
-
         Node *row = col;
         do {
             Node &n  = matrix[row->rowID][row->colID];
