@@ -194,31 +194,78 @@ DLX::DLX(Node *h, int nCol_, int nRow_, vector<int>& solutions_) :
         v = vector<Node>(nCol);
 
     for (Node *col = h->right; col != h; col = col->right) {
-        for (Node *row = col; row->down != col; row = row->down) {
-            Node &n  = matrix[row->rowID][col->colID];
-            n.column = &matrix[0][col->colID];
+        // for (Node *row = col->down; row != col; row = row->down) {
+        //         Node &n  = matrix[row->rowID][col->colID];
+        //         n.column = &matrix[0][col->colID];
+        //         n.rowID  = row->rowID;
+        //         n.colID  = col->colID;
+        //         n.left   = &matrix[row->rowID][col->left->colID];
+        //         n.right  = &matrix[row->rowID][col->right->colID];
+        //         n.up     = &matrix[row->up->rowID][col->colID];
+        //         n.down   = &matrix[row->down->rowID][col->colID];
+
+
+        //         cout << "row = " << row->rowID << "; col = " << col->colID << endl;
+        //         cout << "col->right->colID = " << col->right->colID << endl;
+        //         cout << "row->right->colID = " << row->right->colID << endl;
+        //         cout << "address: " << &n << endl;
+        //         cout << "left: " << n.left << endl;
+        //         cout << "right: " << n.right << endl;
+        //         cout << "up: " << n.up  << endl;
+        //         cout << "down: " << n.down << endl;
+        // }
+
+        Node *row = col;
+        do {
+            Node &n  = matrix[row->rowID][row->colID];
+            n.column = &matrix[0][row->colID];
             n.rowID  = row->rowID;
-            n.colID  = col->colID;
-            n.left   = &matrix[row->rowID][col->left->colID];
-            n.right  = &matrix[row->rowID][col->right->colID];
-            n.up     = &matrix[row->up->rowID][col->colID];
-            n.down   = &matrix[row->down->rowID][col->colID];
-        }
+            n.colID  = row->colID;
+            n.left   = &matrix[row->rowID][row->left->colID];
+            n.right  = &matrix[row->rowID][row->right->colID];
+            n.up     = &matrix[row->up->rowID][row->colID];
+            n.down   = &matrix[row->down->rowID][row->colID];
+
+
+            cout << "row = " << row->rowID << "; col = " << col->colID << endl;
+            // cout << "col->right->colID = " << col->right->colID << endl;
+            cout << "row->up->rowID = " << row->up->rowID << endl;
+            cout << "row->down->rowID = " << row->down->rowID << endl;
+            cout << "address: " << &n << endl;
+            cout << "left: " << n.left << endl;
+            cout << "right: " << n.right << endl;
+            cout << "up: " << n.up  << endl;
+            cout << "down: " << n.down << endl;
+
+            row = row->down;
+        } while (row != col);
+        
+        cout << endl;
     }
 
     header->right = &matrix[0][h->right->colID];
     header->left = &matrix[0][h->left->colID];
     matrix[0][h->right->colID].left = header;
     matrix[0][h->left->colID].right = header;
+
+    // cout << "print start" << endl;
+    // for (Node *col = header->right; col != header; col = col->right) {
+    //     for (Node *row = col->down; row != col; row = row->down)
+    //         cout << row->rowID << ", " << row->colID << endl;
+    // }
+    // print();
+    // cout << "print end" << endl;
 }
 
 
 //
 void DLX::print() {
+    cout << "print start" << endl;
     for (Node *col = header->right; col != header; col = col->right) {
         for (Node *row = col->down; row != col; row = row->down)
             cout << row->rowID << ", " << row->colID << endl;
     }
+    cout << "print end" << endl;
 }
 
 static void print_solve(vector<int>& s) {
@@ -244,10 +291,11 @@ void distribute(unsigned k, DLX* root) {
         while (cur < last) {
 
             DLX*& q = queue[cur++];
+            q->print();
             DLX dlx(q->header, q->nCol, q->nRow, q->solutions);
 
             if (level == k) {
-                cout << "start" << endl;
+                // cout << "start" << endl;
 
                 cout << ">> ";
                 cout << "initial solutions: ";
@@ -277,8 +325,8 @@ void distribute(unsigned k, DLX* root) {
                     dlx.cover(rightNode);
                 }
 
-                DLX dlx1(dlx.header, dlx.nCol, dlx.nRow, dlx.solutions);
-                queue.push_back(&dlx1);
+                // DLX dlx1(dlx.header, dlx.nCol, dlx.nRow, dlx.solutions);
+                queue.push_back(new DLX(dlx.header, dlx.nCol, dlx.nRow, dlx.solutions));
 
                 cout << "pop" << endl;
                 dlx.solutions.pop_back();
