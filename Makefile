@@ -2,7 +2,7 @@ CC = g++
 CFLAGS = -pg -g -Wall
 # CFLAGS = -g -Wall --std=c++0x
 # CFLAGS = -Ofast
-PROG = puzzler
+PROG = puzzler sudoku
 TEMPFILES = core core.* *.o temp.* *.out *~
 
 all: $(PROG)
