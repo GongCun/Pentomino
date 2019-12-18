@@ -8,8 +8,8 @@
 
 # 手动将a.json分解，供Slave程序并发处理，其中 '-r4' 是指输出前4个解
 split -l1 a.json s.
-./sudoku -r4 <./s/s.aa
-./sudoku -r4 <./s/s.ab
+./sudoku -r4 <./s.aa
+./sudoku -r4 <./s.ab
 ...
 ```
 
