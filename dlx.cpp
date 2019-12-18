@@ -202,23 +202,80 @@ DLX::DLX(istream& in) {
     istreambuf_iterator<char> eos;
     string s(istreambuf_iterator<char>(in), eos);
     Document d;
-    d.Parse(s.c_str());
+    header = new Node();
 
+    
+    d.Parse(s.c_str());
     nCol = d["nCol"].GetInt();
     nRow = d["nRow"].GetInt();
-    const Value& v = d["solutions"];
-    for (SizeType i = 0; i < v.Size(); i++)
-        solutions.push_back(v[i].GetInt());
+
+    matrix = vector< vector<Node> >(nRow, vector<Node>(nCol));
+    
+
+    Value::ConstMemberIterator itr;
+
+    itr = d.FindMember("solutions");
+    if (itr != d.MemberEnd()){
+        const Value& v = d["solutions"];
+        for (SizeType i = 0; i < v.Size(); i++)
+            solutions.push_back(v[i].GetInt());
+    }
 
     const Value& m = d["matrix"];
     for (SizeType i = 0; i < m.Size(); i++) {
         assert(m[i].IsObject());
-        for (Value::ConstMemberIterator itr = m[i].MemberBegin();
-             itr != m[i].MemberEnd(); ++itr) {
-            printf("name: %s; value: %d\n",
-                   itr->name.GetString(), itr->value.GetInt());
-            
+        int nodeCount, rowID, colID, left, right, up, down;
+        for (itr = m[i].MemberBegin(); itr != m[i].MemberEnd(); ++itr) {
+            // printf("name: %s; value: %d\n",
+                   // itr->name.GetString(), itr->value.GetInt());
+            if ((string(itr->name.GetString())) == "nodeCount")
+                nodeCount = itr->value.GetInt();
+            if ((string(itr->name.GetString())) == "rowID")
+                rowID = itr->value.GetInt();
+            if ((string(itr->name.GetString())) == "colID")
+                colID = itr->value.GetInt();
+            if ((string(itr->name.GetString())) == "left")
+                left = itr->value.GetInt();
+            if ((string(itr->name.GetString())) == "right")
+                right = itr->value.GetInt();
+            if ((string(itr->name.GetString())) == "up")
+                up = itr->value.GetInt();
+            if ((string(itr->name.GetString())) == "down")
+                down = itr->value.GetInt();
         }
+        Node &n = matrix[rowID][colID];
+        n.nodeCount = nodeCount;
+        n.rowID = rowID;
+        n.colID = colID;
+        n.column = &matrix[0][colID];
+        n.left = &matrix[rowID][left];
+        n.right = &matrix[rowID][right];
+        n.up = &matrix[up][colID];
+        n.down = &matrix[down][colID];
+        // cout << "nodeCount: " << nodeCount << endl;
+        // cout << "rowID: " << rowID << endl;
+        // cout << "colID: " << colID << endl;
+        // cout << "left: " << left << endl;
+        // cout << "right: " << right << endl;
+        // cout << "down: " << down << endl;
+        // cout << "up: " << up << endl;
+        // cout << endl;
+    }
+
+    itr = d.FindMember("front");
+    if (itr != d.MemberEnd()) {
+        header->right = &matrix[0][itr->value.GetInt()];
+        matrix[0][itr->value.GetInt()].left = header;
+    } else {
+        header->right = header;
+    }
+
+    itr = d.FindMember("back");
+    if (itr != d.MemberEnd()) {
+        header->left = &matrix[0][itr->value.GetInt()];
+        matrix[0][itr->value.GetInt()].right = header;
+    } else {
+        header->left = header;
     }
 
 }
@@ -318,6 +375,11 @@ void dlxSerialize(ostream &o, DLX *dlx) {
 
             row = row->down;
         } while (row != col);
+    }
+
+    if (h->right != h) {
+        Pointer("/front").Set(d, h->right->colID);
+        Pointer("/back").Set(d, h->left->colID);
     }
 
     StringBuffer sb;

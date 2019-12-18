@@ -88,13 +88,18 @@ int main(int argc, char *argv[]) {
 
     getline(cin, line);
     init(line);
+    // distribute(k, new DLX(possible));
 
-    distribute(k, new DLX(possible));
+    filebuf fb;
+    fb.open("x.json", ios::in);
+    istream is(&fb);
+    DLX dlx(is);
+    dlx.solve();
+    // cout << dlx.nCol << endl;
+    // cout << dlx.nRow << endl;
+    // for (auto &v : dlx.solutions)
+    //     cout << v << " ";
+    // cout << endl;
 
-    // DLX dlx(possible);
-    // if (dlx.solve())
-    //     print_solve(cout, dlx.solutions);
-    // else
-    //     cout << "no solutions" << endl;
 }
 

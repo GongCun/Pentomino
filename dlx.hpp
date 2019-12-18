@@ -2,6 +2,7 @@
 #define _MY_DLX_H
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -37,8 +38,10 @@ public:
 
     DLX(vector< vector<bool> >& p_);
     DLX(Node*&, int&, int&, vector<int>&);
+    DLX(istream &);
+
     ~DLX() {
-        delete header;
+        if (!header) delete header;
         header = NULL;
         for (auto &v: matrix)
             v.clear();
@@ -65,5 +68,5 @@ public:
 void distribute(unsigned, DLX*);
 extern void print_solve(ostream& o, vector<int>&);
 extern int runs;
-void dlxSerialize(DLX *);
+void dlxSerialize(ostream &, DLX *);
 #endif
