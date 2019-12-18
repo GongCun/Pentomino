@@ -198,6 +198,10 @@ DLX::DLX(Node*& h, int& nCol_, int& nRow_, vector<int>& solutions_) :
 
 
 //
+// DLX::DLX()
+
+
+//
 void DLX::print() {
     cout << "print start" << endl;
     for (Node *col = header->right; col != header; col = col->right) {
@@ -231,7 +235,7 @@ void distribute(unsigned k, DLX* root) {
             DLX* q = queue[cur++];
             if (t >= k) {
                 // q->solve();
-                dlxSerialize(q);
+                dlxSerialize(cout, q);
                 delete q;
                 continue;
             }
@@ -265,27 +269,47 @@ void distribute(unsigned k, DLX* root) {
     }
 }
 
-void dlxSerialize(DLX *dlx) {
+void dlxSerialize(ostream &o, DLX *dlx) {
+    Document d;
+
+    Pointer("/matrix/nCol").Set(d, dlx->nCol);
+    Pointer("/matrix/nRow").Set(d, dlx->nRow);
+    for (unsigned i = 0;  i < dlx->solutions.size(); i++) {
+        string s = "/matrix/solutions/" + to_string(i);
+        Pointer(s.c_str()).Set(d, dlx->solutions[i]);
+    }
+
     Node *h = dlx->header;
     for (Node *col = h->right; col != h; col = col->right) {
         Node *row = col;
         do {
-            Document d;
-            Pointer("/nodeCount").Set(d, row->nodeCount);
-            Pointer("/rowID").Set(d, row->rowID);
-            Pointer("/colID").Set(d, row->colID);
-            Pointer("/left").Set(d, row->left->colID);
-            Pointer("/right").Set(d, row->right->colID);
-            Pointer("/up").Set(d, row->up->rowID);
-            Pointer("/down").Set(d, row->down->rowID);
-            StringBuffer sb;
-            PrettyWriter<StringBuffer> writer(sb);
-            printf("\nJSON string:\n");
-            d.Accept(writer);
-            puts(sb.GetString());
-            cout << endl;
+            string id = to_string(row->rowID) + "," + to_string(row->colID);
+            string token = "/matrix/" + id;
+            
+            Pointer((token + "/nodeCount").c_str()).Set(d, row->nodeCount);
+            Pointer((token + "/rowID").c_str()).Set(d, row->rowID);
+            Pointer((token + "/colID").c_str()).Set(d, row->colID);
+            Pointer((token + "/left").c_str()).Set(d, row->left->colID);
+            Pointer((token + "/right").c_str()).Set(d, row->right->colID);
+            Pointer((token + "/up").c_str()).Set(d, row->up->rowID);
+            Pointer((token + "/down").c_str()).Set(d, row->down->rowID);
+            // Pointer("/matrix/row/nodeCount").Set(d, row->nodeCount);
+            // Pointer("/rowID").Set(d, row->rowID);
+            // Pointer("/colID").Set(d, row->colID);
+            // Pointer("/left").Set(d, row->left->colID);
+            // Pointer("/right").Set(d, row->right->colID);
+            // Pointer("/up").Set(d, row->up->rowID);
+            // Pointer("/down").Set(d, row->down->rowID);
 
             row = row->down;
         } while (row != col);
     }
+
+    StringBuffer sb;
+    PrettyWriter<StringBuffer> writer(sb);
+    // Writer<StringBuffer> writer(sb);
+    printf("\nJSON string:\n");
+    d.Accept(writer);
+    // puts(sb.GetString());
+    o << sb.GetString() << endl;
 }
