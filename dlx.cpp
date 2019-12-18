@@ -206,9 +206,20 @@ DLX::DLX(istream& in) {
 
     nCol = d["nCol"].GetInt();
     nRow = d["nRow"].GetInt();
-    const Value& vs = d["solutions"];
-    for (SizeType i = 0; i < vs.Size(); i++)
-        solutions.push_back(vs[i].GetInt());
+    const Value& v = d["solutions"];
+    for (SizeType i = 0; i < v.Size(); i++)
+        solutions.push_back(v[i].GetInt());
+
+    const Value& m = d["matrix"];
+    for (SizeType i = 0; i < m.Size(); i++) {
+        assert(m[i].IsObject());
+        for (Value::ConstMemberIterator itr = m[i].MemberBegin();
+             itr != m[i].MemberEnd(); ++itr) {
+            printf("name: %s; value: %d\n",
+                   itr->name.GetString(), itr->value.GetInt());
+            
+        }
+    }
 
 }
 
@@ -282,6 +293,7 @@ void distribute(unsigned k, DLX* root) {
 
 void dlxSerialize(ostream &o, DLX *dlx) {
     Document d;
+    int g = 0;
 
     Pointer("/nCol").Set(d, dlx->nCol);
     Pointer("/nRow").Set(d, dlx->nRow);
@@ -294,8 +306,7 @@ void dlxSerialize(ostream &o, DLX *dlx) {
     for (Node *col = h->right; col != h; col = col->right) {
         Node *row = col;
         do {
-            string id = "/" + to_string(row->rowID) + "," + to_string(row->colID);
-            // string token = "/matrix/" + id;
+            string id = "/matrix/" + to_string(g++);
             
             Pointer((id + "/nodeCount").c_str()).Set(d, row->nodeCount);
             Pointer((id + "/rowID").c_str()).Set(d, row->rowID);
@@ -304,13 +315,6 @@ void dlxSerialize(ostream &o, DLX *dlx) {
             Pointer((id + "/right").c_str()).Set(d, row->right->colID);
             Pointer((id + "/up").c_str()).Set(d, row->up->rowID);
             Pointer((id + "/down").c_str()).Set(d, row->down->rowID);
-            // Pointer("/matrix/row/nodeCount").Set(d, row->nodeCount);
-            // Pointer("/rowID").Set(d, row->rowID);
-            // Pointer("/colID").Set(d, row->colID);
-            // Pointer("/left").Set(d, row->left->colID);
-            // Pointer("/right").Set(d, row->right->colID);
-            // Pointer("/up").Set(d, row->up->rowID);
-            // Pointer("/down").Set(d, row->down->rowID);
 
             row = row->down;
         } while (row != col);
