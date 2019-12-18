@@ -198,14 +198,15 @@ DLX::DLX(Node*& h, int& nCol_, int& nRow_, vector<int>& solutions_) :
 
 
 //
-DLX::DLX(istream& in) {
+DLX::DLX(istream& in, string& puzzle) {
     istreambuf_iterator<char> eos;
     string s(istreambuf_iterator<char>(in), eos);
     Document d;
     header = new Node();
 
-    
     d.Parse(s.c_str());
+
+    puzzle = string(d["sudoku"].GetString());
     nCol = d["nCol"].GetInt();
     nRow = d["nRow"].GetInt();
 
@@ -352,6 +353,7 @@ void dlxSerialize(ostream &o, DLX *dlx) {
     Document d;
     int g = 0;
 
+    Pointer("/sudoku").Set(d, puzzle.c_str());
     Pointer("/nCol").Set(d, dlx->nCol);
     Pointer("/nRow").Set(d, dlx->nRow);
     for (unsigned i = 0;  i < dlx->solutions.size(); i++) {
@@ -385,7 +387,6 @@ void dlxSerialize(ostream &o, DLX *dlx) {
     StringBuffer sb;
     // PrettyWriter<StringBuffer> writer(sb);
     Writer<StringBuffer> writer(sb);
-    // printf("\nJSON string:\n");
     d.Accept(writer);
     // puts(sb.GetString());
     o << sb.GetString() << endl;

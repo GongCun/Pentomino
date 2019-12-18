@@ -38,7 +38,7 @@ public:
 
     DLX(vector< vector<bool> >& p_);
     DLX(Node*&, int&, int&, vector<int>&);
-    DLX(istream &);
+    DLX(istream&, string&);
 
     ~DLX() {
         if (!header) delete header;
@@ -68,5 +68,6 @@ public:
 void distribute(unsigned, DLX*);
 extern void print_solve(ostream& o, vector<int>&);
 extern int runs;
+extern string puzzle;
 void dlxSerialize(ostream &, DLX *);
 #endif

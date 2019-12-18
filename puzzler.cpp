@@ -12,6 +12,7 @@ using namespace std;
 const int ROW = 5;
 const int COL = 11;
 
+string puzzle;
 int nRow;
 int nCol;
 int runs;

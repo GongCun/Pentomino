@@ -5,6 +5,7 @@ int runs;
 char *input;
 int branch;
 int master;
+string puzzle;
 
 vector < vector<bool> > possible;
 vector < vector<int> > _groups_of(81);
@@ -81,9 +82,12 @@ void print_solve(ostream &o, vector<int>& solutions) {
     o << endl;
 }
 
+static void help(const char *s) {
+    fprintf(stderr, "%s -m -i puzzle.txt -b branches -r runs <json\n", s);
+    exit(-1);
+}
 int main(int argc, char *argv[]) {
     int c;
-    string line;
     
 
     while ((c = getopt(argc, argv, "mi:b:r:")) != EOF) {
@@ -101,32 +105,27 @@ int main(int argc, char *argv[]) {
             runs = atoi(optarg);
             break;
         case '?':
-            printf("%s -m -i json -b branches -r runs\n", argv[0]);
-            exit(-1);
+            help(argv[0]);
         }
     }
     // if (argc > 1) k = atoi(argv[1]);
     // if (argc > 2) runs = atoi(argv[2]);
 
-    getline(cin, line);
-    init(line);
     if (master) {
+        if (!input) help(argv[0]);
+        filebuf fb;
+        fb.open(input, ios::in);
+        istream is(&fb);
+        getline(is, puzzle);
+        init(puzzle);
         distribute(branch, new DLX(possible));
         return 0;
     }
 
-    filebuf fb;
-    fb.open(input, ios::in);
-    istream is(&fb);
-    DLX dlx(is);
+    DLX dlx(cin, puzzle);
+    init(puzzle);
     if (!dlx.solve())
         cout << "No Solutions" << endl;
-    
-    // cout << dlx.nCol << endl;
-    // cout << dlx.nRow << endl;
-    // for (auto &v : dlx.solutions)
-    //     cout << v << " ";
-    // cout << endl;
 
 }
 
