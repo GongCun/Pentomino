@@ -206,7 +206,7 @@ DLX::DLX(istream& in, string& puzzle) {
 
     d.Parse(s.c_str());
 
-    puzzle = string(d["sudoku"].GetString());
+    puzzle = string(d["puzzle"].GetString());
     nCol = d["nCol"].GetInt();
     nRow = d["nRow"].GetInt();
 
@@ -353,7 +353,7 @@ void dlxSerialize(ostream &o, DLX *dlx) {
     Document d;
     int g = 0;
 
-    Pointer("/sudoku").Set(d, puzzle.c_str());
+    Pointer("/puzzle").Set(d, puzzle.c_str());
     Pointer("/nCol").Set(d, dlx->nCol);
     Pointer("/nRow").Set(d, dlx->nRow);
     for (unsigned i = 0;  i < dlx->solutions.size(); i++) {
