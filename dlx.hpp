@@ -7,8 +7,13 @@
 #include <algorithm>
 #include <unistd.h>
 #include <stdlib.h>
+#include <cstdio>
+#include "rapidjson/document.h"
+#include "rapidjson/prettywriter.h" // for stringify JSON
+#include "rapidjson/pointer.h"
 
 using namespace std;
+using namespace rapidjson;
 
 struct Node {
     struct Node *left;
@@ -60,4 +65,5 @@ public:
 void distribute(unsigned, DLX*);
 extern void print_solve(ostream& o, vector<int>&);
 extern int runs;
+void dlxSerialize(DLX *);
 #endif

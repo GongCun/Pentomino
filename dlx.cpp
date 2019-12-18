@@ -121,21 +121,11 @@ void DLX::uncover(Node *targetNode) {
     colNode->right->left = colNode;
 }
 
-// void DLX::print(ostream &o) const {
-//     for (auto &v : solutions)
-//         o << v->rowID << " ";
-//     o << endl;
-// }
-
 bool DLX::solve() {
     // cout << "solve()" << endl;
     bool success = false;
 
     if (header->right == header) {
-        // if (solutions.size() == 81)
-        //     return true;
-        // else
-        //     return false;
         print_solve(cout, solutions);
         // For testing in singleton mode
         if (++global == runs)
@@ -144,10 +134,6 @@ bool DLX::solve() {
     }
 
     Node *column = leastOne();
-    // if (column == header) {
-    //     cout << "false1" << endl;
-    //     return false;
-    // }
 
     cover(column);
 
@@ -221,15 +207,6 @@ void DLX::print() {
     cout << "print end" << endl;
 }
 
-// static void print_solve(vector<int>& s) {
-//     if (!s.empty()) {
-//         for (auto &v : s)
-//             cout << v << " ";
-//         cout << endl;
-//     } else {
-//         cout << "solutions is empty" << endl;
-//     }
-// }
 
 //
 void distribute(unsigned k, DLX* root) {
@@ -252,27 +229,9 @@ void distribute(unsigned k, DLX* root) {
         while (cur < last) {
 
             DLX* q = queue[cur++];
-            // if (q->solve()) {
-            //     print_solve(cout, q->solutions);
-            // }
-            // return;
-
-            // DLX dlx(q->header, q->nCol, q->nRow, q->solutions);
-            // delete q;
-
-            // if (level == k) {
             if (t >= k) {
-                // cout << ">> initial solutions: ";
-                // print_solve(dlx.solutions);
-                // dlx.print();
-
-                // if (q->solve()) {
-                //     // cout <<"final solutions: ";
-                //     print_solve(cout, q->solutions);
-                // } else {
-                //     cout <<"no solutions" << endl;
-                // }
-                q->solve();
+                // q->solve();
+                dlxSerialize(q);
                 delete q;
                 continue;
             }
@@ -303,5 +262,30 @@ void distribute(unsigned k, DLX* root) {
             delete q;
         }
         level++;
+    }
+}
+
+void dlxSerialize(DLX *dlx) {
+    Node *h = dlx->header;
+    for (Node *col = h->right; col != h; col = col->right) {
+        Node *row = col;
+        do {
+            Document d;
+            Pointer("/nodeCount").Set(d, row->nodeCount);
+            Pointer("/rowID").Set(d, row->rowID);
+            Pointer("/colID").Set(d, row->colID);
+            Pointer("/left").Set(d, row->left->colID);
+            Pointer("/right").Set(d, row->right->colID);
+            Pointer("/up").Set(d, row->up->rowID);
+            Pointer("/down").Set(d, row->down->rowID);
+            StringBuffer sb;
+            PrettyWriter<StringBuffer> writer(sb);
+            printf("\nJSON string:\n");
+            d.Accept(writer);
+            puts(sb.GetString());
+            cout << endl;
+
+            row = row->down;
+        } while (row != col);
     }
 }
