@@ -198,8 +198,19 @@ DLX::DLX(Node*& h, int& nCol_, int& nRow_, vector<int>& solutions_) :
 
 
 //
-// DLX::DLX()
+DLX::DLX(istream& in) {
+    istreambuf_iterator<char> eos;
+    string s(istreambuf_iterator<char>(in), eos);
+    Document d;
+    d.Parse(s.c_str());
 
+    nCol = d["nCol"].GetInt();
+    nRow = d["nRow"].GetInt();
+    const Value& vs = d["solutions"];
+    for (SizeType i = 0; i < vs.Size(); i++)
+        solutions.push_back(vs[i].GetInt());
+
+}
 
 //
 void DLX::print() {
@@ -223,12 +234,12 @@ void distribute(unsigned k, DLX* root) {
     unsigned cur = 0, last = 1, level = 0;
 
     while (cur < queue.size()) {
-        cout << "level = " << level << endl;
+        // cout << "level = " << level << endl;
         last = queue.size();
 
         auto t = last - cur;
         
-        cout << "level count = " << last - cur << endl;
+        // cout << "level count = " << last - cur << endl;
 
         while (cur < last) {
 
@@ -272,10 +283,10 @@ void distribute(unsigned k, DLX* root) {
 void dlxSerialize(ostream &o, DLX *dlx) {
     Document d;
 
-    Pointer("/matrix/nCol").Set(d, dlx->nCol);
-    Pointer("/matrix/nRow").Set(d, dlx->nRow);
+    Pointer("/nCol").Set(d, dlx->nCol);
+    Pointer("/nRow").Set(d, dlx->nRow);
     for (unsigned i = 0;  i < dlx->solutions.size(); i++) {
-        string s = "/matrix/solutions/" + to_string(i);
+        string s = "/solutions/" + to_string(i);
         Pointer(s.c_str()).Set(d, dlx->solutions[i]);
     }
 
@@ -283,16 +294,16 @@ void dlxSerialize(ostream &o, DLX *dlx) {
     for (Node *col = h->right; col != h; col = col->right) {
         Node *row = col;
         do {
-            string id = to_string(row->rowID) + "," + to_string(row->colID);
-            string token = "/matrix/" + id;
+            string id = "/" + to_string(row->rowID) + "," + to_string(row->colID);
+            // string token = "/matrix/" + id;
             
-            Pointer((token + "/nodeCount").c_str()).Set(d, row->nodeCount);
-            Pointer((token + "/rowID").c_str()).Set(d, row->rowID);
-            Pointer((token + "/colID").c_str()).Set(d, row->colID);
-            Pointer((token + "/left").c_str()).Set(d, row->left->colID);
-            Pointer((token + "/right").c_str()).Set(d, row->right->colID);
-            Pointer((token + "/up").c_str()).Set(d, row->up->rowID);
-            Pointer((token + "/down").c_str()).Set(d, row->down->rowID);
+            Pointer((id + "/nodeCount").c_str()).Set(d, row->nodeCount);
+            Pointer((id + "/rowID").c_str()).Set(d, row->rowID);
+            Pointer((id + "/colID").c_str()).Set(d, row->colID);
+            Pointer((id + "/left").c_str()).Set(d, row->left->colID);
+            Pointer((id + "/right").c_str()).Set(d, row->right->colID);
+            Pointer((id + "/up").c_str()).Set(d, row->up->rowID);
+            Pointer((id + "/down").c_str()).Set(d, row->down->rowID);
             // Pointer("/matrix/row/nodeCount").Set(d, row->nodeCount);
             // Pointer("/rowID").Set(d, row->rowID);
             // Pointer("/colID").Set(d, row->colID);
@@ -308,7 +319,7 @@ void dlxSerialize(ostream &o, DLX *dlx) {
     StringBuffer sb;
     PrettyWriter<StringBuffer> writer(sb);
     // Writer<StringBuffer> writer(sb);
-    printf("\nJSON string:\n");
+    // printf("\nJSON string:\n");
     d.Accept(writer);
     // puts(sb.GetString());
     o << sb.GetString() << endl;
