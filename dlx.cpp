@@ -307,7 +307,7 @@ void distribute(unsigned k, DLX* root) {
 
         auto t = last - cur;
         
-        // cout << "level count = " << last - cur << endl;
+        cerr << "level count = " << last - cur << endl;
 
         while (cur < last) {
 
@@ -383,8 +383,8 @@ void dlxSerialize(ostream &o, DLX *dlx) {
     }
 
     StringBuffer sb;
-    PrettyWriter<StringBuffer> writer(sb);
-    // Writer<StringBuffer> writer(sb);
+    // PrettyWriter<StringBuffer> writer(sb);
+    Writer<StringBuffer> writer(sb);
     // printf("\nJSON string:\n");
     d.Accept(writer);
     // puts(sb.GetString());

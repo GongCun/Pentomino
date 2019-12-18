@@ -2,6 +2,9 @@
 #include <map>
 
 int runs;
+char *input;
+int branch;
+int master;
 
 vector < vector<bool> > possible;
 vector < vector<int> > _groups_of(81);
@@ -79,22 +82,46 @@ void print_solve(ostream &o, vector<int>& solutions) {
 }
 
 int main(int argc, char *argv[]) {
-    int k = 0;
+    int c;
     string line;
-    // vector<Node *> solutions;
+    
 
-    if (argc > 1) k = atoi(argv[1]);
-    if (argc > 2) runs = atoi(argv[2]);
+    while ((c = getopt(argc, argv, "mi:b:r:")) != EOF) {
+        switch (c) {
+        case 'm' :
+            master = 1;
+            break;
+        case 'i':
+            input = optarg;
+            break;
+        case 'b':
+            branch = atoi(optarg);
+            break;
+        case 'r':
+            runs = atoi(optarg);
+            break;
+        case '?':
+            printf("%s -m -i json -b branches -r runs\n", argv[0]);
+            exit(-1);
+        }
+    }
+    // if (argc > 1) k = atoi(argv[1]);
+    // if (argc > 2) runs = atoi(argv[2]);
 
     getline(cin, line);
     init(line);
-    // distribute(k, new DLX(possible));
+    if (master) {
+        distribute(branch, new DLX(possible));
+        return 0;
+    }
 
     filebuf fb;
-    fb.open("x.json", ios::in);
+    fb.open(input, ios::in);
     istream is(&fb);
     DLX dlx(is);
-    dlx.solve();
+    if (!dlx.solve())
+        cout << "No Solutions" << endl;
+    
     // cout << dlx.nCol << endl;
     // cout << dlx.nRow << endl;
     // for (auto &v : dlx.solutions)
