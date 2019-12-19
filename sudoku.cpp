@@ -12,11 +12,12 @@ char *input;
 int branch;
 int master;
 string puzzle;
-char *server;
+// char *server;
 char *port;
 
 vector < vector<bool> > possible;
 vector < vector<int> > _groups_of(81);
+vector<char *>serverList;
 
 const int nCol = 9 * (9 + 9 + 9 + 9);
 
@@ -95,9 +96,17 @@ static void help(const char *s) {
     exit(-1);
 }
 
-static void writeSocket(char *server, char *port, string& str) {
+
+static void writeSocket(char *port, string& str) {
     int sock = -1;
     struct sockaddr_in serv;
+    static vector<char *>::iterator it = serverList.begin();
+
+    if (it == serverList.end())
+        it = serverList.begin();
+
+    char *server = *it++;
+    fprintf(stderr, "server: %s\n", server);
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("socket error");
@@ -136,7 +145,7 @@ static void writeSocket(char *server, char *port, string& str) {
 }
 
 void writeString(string& str) {
-    writeSocket(server, port, str);
+    writeSocket(port, str);
 }
 
 int main(int argc, char *argv[]) {
@@ -158,7 +167,8 @@ int main(int argc, char *argv[]) {
             runs = atoi(optarg);
             break;
         case 's':
-            server = optarg;
+            // server = optarg;
+            serverList.push_back(optarg);
             break;
         case 'p':
             port = optarg;
@@ -172,7 +182,7 @@ int main(int argc, char *argv[]) {
 
     if (master) {
         if (!input) help(argv[0]);
-        if (!(server && port)) help(argv[0]);
+        if (serverList.empty() || !port) help(argv[0]);
 
         filebuf fb;
         fb.open(input, ios::in);
