@@ -8,7 +8,7 @@ TEMPFILES = core core.* *.o temp.* *.out *~
 
 all: $(PROG)
 
-$(PROG): %: %.cpp dlx.cpp
+$(PROG): %: %.cpp dlx.cpp socket.cpp
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:

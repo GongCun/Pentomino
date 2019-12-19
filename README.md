@@ -13,7 +13,7 @@ split -d -1 a.json s.
 ...
 ```
 
-通过nc作为Socket服务器端读入JSON文件，并传递给Slave处理：
+通过ncat作为Socket服务器端读入JSON文件，并传递给Slave处理：
 
 ```sh
 # Prepare the script
@@ -24,8 +24,8 @@ dir=`(cd $dir; pwd -P)`
 cd $dir
 ./sudoku >/tmp/sudoku.$$
 
-# Slave (default maximum connections of nc is 100)
-nc -4 -l 3001 -c ./run.sh --keep-open --recv-only
+# Slave (default maximum connections of ncat is 100)
+ncat -4 -l 3001 -c ./run.sh --keep-open --recv-only
 
 # Master (4 processes concurrence)
 ./sudoku -m -b4 -i ./hard.txt -s 127.0.0.1 -p 3001
