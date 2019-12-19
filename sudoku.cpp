@@ -130,12 +130,13 @@ static void writeSocket(char *port, string& str) {
     const char *p = str.c_str();
     int len = str.size();
     while (len > 0) {
-        if (write(sock, p, MAXLINE) < 0) {
+        size_t writelen = (MAXLINE < len ? MAXLINE : len);
+        if (write(sock, p, writelen) < 0) {
             perror("write");
             exit(-1);
         }
-        p += MAXLINE;
-        len -= MAXLINE;
+        p += writelen;
+        len -= writelen;
     }
 
     if (close(sock) < 0) {
