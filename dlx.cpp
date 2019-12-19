@@ -315,7 +315,9 @@ void distribute(unsigned k, DLX* root) {
             DLX* q = queue[cur++];
             if (t >= k) {
                 // q->solve();
-                dlxSerialize(cout, q);
+                string str;
+                dlxSerialize(str, q);
+                writeString(str);
                 delete q;
                 continue;
             }
@@ -349,7 +351,7 @@ void distribute(unsigned k, DLX* root) {
     }
 }
 
-void dlxSerialize(ostream &o, DLX *dlx) {
+void dlxSerialize(string &str, DLX *dlx) {
     Document d;
     int g = 0;
 
@@ -389,5 +391,6 @@ void dlxSerialize(ostream &o, DLX *dlx) {
     Writer<StringBuffer> writer(sb);
     d.Accept(writer);
     // puts(sb.GetString());
-    o << sb.GetString() << endl;
+    // o << sb.GetString() << endl;
+    str = string(sb.GetString());
 }

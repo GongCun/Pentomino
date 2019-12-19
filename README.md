@@ -1,6 +1,6 @@
 ### PuzzleBrain - 基于DLX算法和MapReduce架构的分布式系统
 
-目前已完成了手动MapReduce，可以将问题按层分解并保存为JSON结构（需要安装[rapidjson](https://github.com/Tencent/rapidjson)），供其他进程读入并做处理
+目前已初步完成了MapReduce，可以将问题按层分解并保存为JSON结构（需要安装[rapidjson](https://github.com/Tencent/rapidjson)），供其他进程读入并做处理
 
 ```sh
 # Master程序将问题分层，当某一层节点数>=16时，将缩小的问题保存为JSON文件
@@ -27,8 +27,8 @@ cd $dir
 # Slave (default maximum connections of nc is 100)
 nc -4 -l 3001 -c ./run.sh --keep-open --recv-only
 
-# Master
-cat ./a.json | nc --send-only 127.0.0.1 3001
+# Master (4 processes concurrence)
+./sudoku -m -b4 -i ./hard.txt -s 127.0.0.1 -p 3001
 
 # Observer
 tail -f /tmp/sudoku.<pid>

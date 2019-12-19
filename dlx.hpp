@@ -16,6 +16,11 @@
 using namespace std;
 using namespace rapidjson;
 
+extern int runs;
+extern string puzzle;
+extern void writeString(string&);
+extern void print_solve(ostream& o, vector<int>&);
+
 struct Node {
     struct Node *left;
     struct Node *right;
@@ -66,8 +71,5 @@ public:
 };
 
 void distribute(unsigned, DLX*);
-extern void print_solve(ostream& o, vector<int>&);
-extern int runs;
-extern string puzzle;
-void dlxSerialize(ostream &, DLX *);
+void dlxSerialize(string&, DLX*);
 #endif
