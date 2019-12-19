@@ -13,24 +13,31 @@ split -d -1 a.json s.
 ...
 ```
 
-通过ncat作为Socket服务器端读入JSON文件，并传递给Slave处理：
+通过ncat作为Socket服务器端读入JSON文件，并传递给Slave处理。
+
+对于sudoku程序：
 
 ```sh
-# Prepare the script
-cat ./run.sh
-#!/bin/sh
-dir=`dirname $0`
-dir=`(cd $dir; pwd -P)`
-cd $dir
-./sudoku >/tmp/sudoku.$$
-
 # Slave (default maximum connections of ncat is 100)
 ncat -4 -l 3001 -c ./run.sh --keep-open --recv-only
 
-# Master (4 processes concurrence)
+# Master (4 or more processes concurrence)
 ./sudoku -m -b4 -i ./hard.txt -s 127.0.0.1 -p 3001
 
 # Observer
 tail -f /tmp/sudoku.<pid>
+```
+
+对于puzzler(Pentomino)程序：
+
+```sh
+# Slave (default maximum connections of ncat is 100)
+ncat -4 -l 3001 -c ./run2.sh --keep-open --recv-only
+
+# Master (8 or more processes concurrence)
+./puzzler -m -b8 -s 127.0.0.1 -p 3001
+
+# Observer
+tail -f /tmp/puzzler.<pid>
 ```
 

@@ -12,10 +12,14 @@ using namespace std;
 const int ROW = 5;
 const int COL = 11;
 
-string puzzle;
 int nRow;
 int nCol;
 int runs;
+int branch;
+bool master = false;
+string puzzle;
+char *port;
+vector<char *>serverList;
 
 class Position {
 public:
@@ -510,19 +514,54 @@ void init() {
 }
 
 
+extern void writeSocket(char *, string&);
 
+void writeString(string& str) {
+    writeSocket(port, str);
+}
+
+static void help(const char *s) {
+    fprintf(stderr, "%s -m -b branches -r runs -s server -p port <json\n", s);
+    exit(-1);
+}
 
 int main(int argc, char *argv[]) {
-    // if (argc > 1) runs = atoi(argv[1]);
-    int k = 0;
-    if (argc > 1) k = atoi(argv[1]);
-    if (argc > 2) runs = atoi(argv[2]);
-    // Possible possible;
+    int c;
+
+    while ((c = getopt(argc, argv, "mb:r:s:p:")) != EOF) {
+        switch (c) {
+        case 'm' :
+            master = 1;
+            break;
+        case 'b':
+            branch = atoi(optarg);
+            break;
+        case 'r':
+            runs = atoi(optarg);
+            break;
+        case 's':
+            // server = optarg;
+            serverList.push_back(optarg);
+            break;
+        case 'p':
+            port = optarg;
+            break;
+        case '?':
+            help(argv[0]);
+        }
+    }
     init();
     
-    // cout << possible << endl;
-    // solve();
-    distribute(k, new DLX(p_));
+    if (master) {
+        if (serverList.empty() || !port) help(argv[0]);
+
+        distribute(branch, new DLX(p_));
+        return 0;
+    }
+
+    DLX dlx(cin, puzzle);
+    if (!dlx.solve())
+        cout << "No Solutions" << endl;
 }
 
 

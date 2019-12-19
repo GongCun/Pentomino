@@ -4,7 +4,7 @@
 int runs;
 char *input;
 int branch;
-int master;
+bool master = false;
 string puzzle;
 char *port;
 
@@ -97,12 +97,11 @@ void writeString(string& str) {
 
 int main(int argc, char *argv[]) {
     int c;
-    
 
     while ((c = getopt(argc, argv, "mi:b:r:s:p:")) != EOF) {
         switch (c) {
         case 'm' :
-            master = 1;
+            master = true;
             break;
         case 'i':
             input = optarg;
