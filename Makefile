@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -pg -g -Wall
+CFLAGS = -pg -g -Wall --std=c++0x
 # CFLAGS = -g -Wall --std=c++0x
 # CFLAGS = -Ofast
 # PROG = puzzler sudoku dlx-test dlx-test2 sudoku2
