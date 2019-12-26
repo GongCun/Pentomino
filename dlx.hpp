@@ -9,9 +9,15 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <cstdio>
+#include <string.h>
+#include <errno.h>
+#include <sys/select.h>
+#include <sys/time.h>
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h" // for stringify JSON
 #include "rapidjson/pointer.h"
+
+#define BUFLEN 4096
 
 using namespace std;
 using namespace rapidjson;
@@ -60,7 +66,7 @@ public:
     Node *leastOne(void);
     void cover(Node *);
     void uncover(Node *);
-    bool solve();
+    bool solve(ostream &);
     void print();
 
     int getRight(int i) { return (i + 1) % nCol; }

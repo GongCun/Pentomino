@@ -19,7 +19,7 @@ split -d -1 a.json s.
 
 ```sh
 # Slave (default maximum connections of ncat is 100)
-ncat -4 -l 3001 -c ./run.sh --keep-open --recv-only
+ncat -4 -l 3001 -c ./run.sh --keep-open
 
 # Master (4 or more processes concurrence)
 ./sudoku -m -b4 -i ./hard.txt -s 127.0.0.1 -p 3001
@@ -32,7 +32,7 @@ tail -f /tmp/sudoku.<pid>
 
 ```sh
 # Slave (default maximum connections of ncat is 100)
-ncat -4 -l 3001 -c ./run2.sh --keep-open --recv-only
+ncat -4 -l 3001 -c ./run2.sh --keep-open
 
 # Master (8 or more processes concurrence)
 ./puzzler -m -b8 -s 127.0.0.1 -p 3001

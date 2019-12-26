@@ -6,6 +6,9 @@
 #define MAXLINE 4096
 
 extern vector<char *>serverList;
+extern vector<int>sockfd;
+extern fd_set rset;
+extern int maxfd;
 
 void writeSocket(char *port, string& str) {
     int sock = -1;
@@ -37,6 +40,10 @@ void writeSocket(char *port, string& str) {
         exit(-1);
     }
 
+    sockfd.push_back(sock);
+    FD_SET(sock, &rset);
+    if (sock > maxfd) maxfd = sock;
+
     const char *p = str.c_str();
     int len = str.size();
     while (len > 0) {
@@ -49,8 +56,12 @@ void writeSocket(char *port, string& str) {
         len -= writelen;
     }
 
-    if (close(sock) < 0) {
-        perror("close");
+    // if (close(sock) < 0) {
+    //     perror("close");
+    //     exit(-1);
+    // }
+    if (shutdown(sock, SHUT_WR) < 0) {
+        perror("shutdown");
         exit(-1);
     }
 }

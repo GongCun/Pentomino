@@ -20,6 +20,9 @@ bool master = false;
 string puzzle;
 char *port;
 vector<char *>serverList;
+vector<int>sockfd;
+fd_set rset;
+int maxfd;
 
 class Position {
 public:
@@ -525,6 +528,36 @@ static void help(const char *s) {
     exit(-1);
 }
 
+static void waitSlave() {
+    int n;
+    for ( ; ; ) {
+        if ((n = select(maxfd + 1, &rset, NULL, NULL, NULL)) < 0) {
+            perror("select");
+            exit(-1);
+        } else if (n == 0) {
+            break;
+        }
+
+        for (vector<int>::iterator it = sockfd.begin();
+             it != sockfd.end(); ) {
+            int fd = *it;
+            if (FD_ISSET(fd, &rset)) {
+                if (close(fd) < 0) {
+                    perror("close");
+                    exit(-1);
+                }
+                FD_CLR(fd, &rset);
+                fprintf(stderr, "%d closed\n", fd);
+                it = sockfd.erase(it);
+            } else {
+                ++it;
+            }
+        }
+
+        if (sockfd.empty()) break;
+    }
+}
+
 int main(int argc, char *argv[]) {
     int c;
 
@@ -555,13 +588,26 @@ int main(int argc, char *argv[]) {
     if (master) {
         if (serverList.empty() || !port) help(argv[0]);
 
+        FD_ZERO(&rset);
         distribute(branch, new DLX(p_));
+        waitSlave();
         return 0;
     }
 
     DLX dlx(cin, puzzle);
-    if (!dlx.solve())
+    char buf[BUFLEN];
+    snprintf(buf, sizeof(buf), "/tmp/solution.%u", (unsigned)getpid());
+    ofstream ofs;
+    ofs.open(buf, ofstream::out | ofstream::trunc);
+    if (!ofs.is_open()) {
+        fprintf(stderr, "open %s error: %s\n", buf, strerror(errno));
+        exit(-1);
+    }
+    fprintf(stderr, "%s\n", buf);
+    if (!dlx.solve(ofs))
         cout << "No Solutions" << endl;
+    ofs.close();
+
 }
 
 

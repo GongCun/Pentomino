@@ -121,12 +121,12 @@ void DLX::uncover(Node *targetNode) {
     colNode->right->left = colNode;
 }
 
-bool DLX::solve() {
+bool DLX::solve(ostream &o) {
     // cout << "solve()" << endl;
     bool success = false;
 
     if (header->right == header) {
-        print_solve(cout, solutions);
+        print_solve(o, solutions);
         // For testing in singleton mode
         if (++global == runs)
             exit(0);
@@ -145,7 +145,7 @@ bool DLX::solve() {
             cover(rightNode);
 
         // if (solve()) return true;
-        if (solve()) success = true;
+        if (solve(o)) success = true;
 
         solutions.pop_back();
         column = row->column;
