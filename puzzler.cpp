@@ -21,8 +21,8 @@ string puzzle;
 char *port;
 vector<char *>serverList;
 vector<int>sockfd;
-fd_set rset;
-int maxfd;
+fd_set allset;
+// int maxfd;
 
 class Position {
 public:
@@ -529,8 +529,12 @@ static void help(const char *s) {
 }
 
 static void waitSlave() {
-    int n;
+    int n, maxfd;
+    fd_set rset;
+
     for ( ; ; ) {
+        rset = allset;
+        maxfd = *max_element(sockfd.begin(), sockfd.end());
         if ((n = select(maxfd + 1, &rset, NULL, NULL, NULL)) < 0) {
             perror("select");
             exit(-1);
@@ -546,7 +550,7 @@ static void waitSlave() {
                     perror("close");
                     exit(-1);
                 }
-                FD_CLR(fd, &rset);
+                FD_CLR(fd, &allset);
                 fprintf(stderr, "%d closed\n", fd);
                 it = sockfd.erase(it);
             } else {
@@ -588,7 +592,7 @@ int main(int argc, char *argv[]) {
     if (master) {
         if (serverList.empty() || !port) help(argv[0]);
 
-        FD_ZERO(&rset);
+        FD_ZERO(&allset);
         distribute(branch, new DLX(p_));
         waitSlave();
         return 0;

@@ -7,8 +7,8 @@
 
 extern vector<char *>serverList;
 extern vector<int>sockfd;
-extern fd_set rset;
-extern int maxfd;
+extern fd_set allset;
+// extern int maxfd;
 
 void writeSocket(char *port, string& str) {
     int sock = -1;
@@ -41,8 +41,8 @@ void writeSocket(char *port, string& str) {
     }
 
     sockfd.push_back(sock);
-    FD_SET(sock, &rset);
-    if (sock > maxfd) maxfd = sock;
+    FD_SET(sock, &allset);
+    // if (sock > maxfd) maxfd = sock;
 
     const char *p = str.c_str();
     int len = str.size();
