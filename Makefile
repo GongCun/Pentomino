@@ -1,8 +1,8 @@
 CC = g++
 CFLAGS = -pg -g -Wall --std=c++0x
 # CFLAGS = -g -Wall --std=c++0x
-# CFLAGS = -Ofast
-# PROG = puzzler sudoku dlx-test dlx-test2 sudoku2
+# CFLAGS = -Ofast --std=c++0x
+# CFLAGS = -Ofast --std=c++0x -maix64
 PROG = puzzler sudoku
 TEMPFILES = core core.* *.o temp.* *.out *~
 
