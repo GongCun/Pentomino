@@ -518,6 +518,7 @@ void init() {
 
 
 extern void writeSocket(char *, string&);
+extern void waitSlave(void);
 
 void writeString(string& str) {
     writeSocket(port, str);
@@ -526,40 +527,6 @@ void writeString(string& str) {
 static void help(const char *s) {
     fprintf(stderr, "%s -m -b branches -r runs -s server -p port <json\n", s);
     exit(-1);
-}
-
-static void waitSlave() {
-    int n, maxfd;
-    fd_set rset;
-
-    for ( ; ; ) {
-        rset = allset;
-        maxfd = *max_element(sockfd.begin(), sockfd.end());
-        if ((n = select(maxfd + 1, &rset, NULL, NULL, NULL)) < 0) {
-            perror("select");
-            exit(-1);
-        } else if (n == 0) {
-            break;
-        }
-
-        for (vector<int>::iterator it = sockfd.begin();
-             it != sockfd.end(); ) {
-            int fd = *it;
-            if (FD_ISSET(fd, &rset)) {
-                if (close(fd) < 0) {
-                    perror("close");
-                    exit(-1);
-                }
-                FD_CLR(fd, &allset);
-                fprintf(stderr, "%d closed\n", fd);
-                it = sockfd.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
-        if (sockfd.empty()) break;
-    }
 }
 
 int main(int argc, char *argv[]) {
