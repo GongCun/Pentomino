@@ -41,3 +41,6 @@ ncat -4 -l 3001 -c ./run2.sh --keep-open
 tail -f /tmp/puzzler.<pid>
 ```
 
+Master(-m)進程通過select(2)獲知socket是否關閉，從而得知slave進程處理完成，由於沒
+有使用libevent或Boost.Asio等庫，這是一個非常簡化的方案，沒有考慮到異常或錯誤處理
+等。
