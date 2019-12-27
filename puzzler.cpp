@@ -19,10 +19,8 @@ int branch;
 bool master = false;
 string puzzle;
 char *port;
+char *output;
 vector<char *>serverList;
-vector<int>sockfd;
-fd_set allset;
-// int maxfd;
 
 class Position {
 public:
@@ -519,20 +517,21 @@ void init() {
 
 extern void writeSocket(char *, string&);
 extern void waitSlave(void);
+extern void initSock(void);
 
 void writeString(string& str) {
     writeSocket(port, str);
 }
 
 static void help(const char *s) {
-    fprintf(stderr, "%s -m -b branches -r runs -s server -p port <json\n", s);
+    fprintf(stderr, "%s -m -b branches -r runs -s server -p port -o output <json\n", s);
     exit(-1);
 }
 
 int main(int argc, char *argv[]) {
     int c;
 
-    while ((c = getopt(argc, argv, "mb:r:s:p:")) != EOF) {
+    while ((c = getopt(argc, argv, "mb:r:s:p:o:")) != EOF) {
         switch (c) {
         case 'm' :
             master = 1;
@@ -550,6 +549,9 @@ int main(int argc, char *argv[]) {
         case 'p':
             port = optarg;
             break;
+        case 'o':
+            output = optarg;
+            break;
         case '?':
             help(argv[0]);
         }
@@ -559,24 +561,26 @@ int main(int argc, char *argv[]) {
     if (master) {
         if (serverList.empty() || !port) help(argv[0]);
 
-        FD_ZERO(&allset);
+        initSock();
         distribute(branch, new DLX(p_));
         waitSlave();
         return 0;
     }
 
+    // Slave process
     DLX dlx(cin, puzzle);
-    char buf[BUFLEN];
-    snprintf(buf, sizeof(buf), "/tmp/solution.%u", (unsigned)getpid());
+    if (output == NULL) {
+        help(argv[0]);
+    }
     ofstream ofs;
-    ofs.open(buf, ofstream::out | ofstream::trunc);
+    ofs.open(output, ofstream::out | ofstream::trunc);
     if (!ofs.is_open()) {
-        fprintf(stderr, "open %s error: %s\n", buf, strerror(errno));
+        fprintf(stderr, "open %s error: %s\n", output, strerror(errno));
         exit(-1);
     }
-    fprintf(stderr, "%s\n", buf);
+    fprintf(stderr, "%s\n", output);
     if (!dlx.solve(ofs))
-        cout << "No Solutions" << endl;
+        ofs << "No Solutions" << endl;
     ofs.close();
 
 }

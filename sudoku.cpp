@@ -7,6 +7,7 @@ int branch;
 bool master = false;
 string puzzle;
 char *port;
+char *output;
 
 vector < vector<bool> > possible;
 vector < vector<int> > _groups_of(81);
@@ -85,11 +86,13 @@ void print_solve(ostream &o, vector<int>& solutions) {
 }
 
 static void help(const char *s) {
-    fprintf(stderr, "%s -m -i puzzle.txt -b branches -r runs -s server -p port <json\n", s);
+    fprintf(stderr, "%s -m -i input -o output -b branches -r runs -s server -p port <json\n", s);
     exit(-1);
 }
 
 extern void writeSocket(char *, string&);
+extern void waitSlave(void);
+extern void initSock(void);
 
 void writeString(string& str) {
     writeSocket(port, str);
@@ -98,7 +101,7 @@ void writeString(string& str) {
 int main(int argc, char *argv[]) {
     int c;
 
-    while ((c = getopt(argc, argv, "mi:b:r:s:p:")) != EOF) {
+    while ((c = getopt(argc, argv, "mi:b:r:s:p:o:")) != EOF) {
         switch (c) {
         case 'm' :
             master = true;
@@ -119,6 +122,9 @@ int main(int argc, char *argv[]) {
         case 'p':
             port = optarg;
             break;
+        case 'o':
+            output = optarg;
+            break;
         case '?':
             help(argv[0]);
         }
@@ -135,14 +141,28 @@ int main(int argc, char *argv[]) {
         istream is(&fb);
         getline(is, puzzle);
         init(puzzle);
+        initSock();
         distribute(branch, new DLX(possible));
+        waitSlave();
         return 0;
     }
 
+    // Slave process
     DLX dlx(cin, puzzle);
     init(puzzle);
-    if (!dlx.solve())
-        cout << "No Solutions" << endl;
+    if (output == NULL) {
+        help(argv[0]);
+    }
+    ofstream ofs;
+    ofs.open(output, ofstream::out | ofstream::trunc);
+    if (!ofs.is_open()) {
+        fprintf(stderr, "open %s error: %s\n", output, strerror(errno));
+        exit(-1);
+    }
+    fprintf(stderr, "%s\n", output);
+    if (!dlx.solve(ofs))
+        ofs << "No Solutions" << endl;
+    ofs.close();
 
 }
 

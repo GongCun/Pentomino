@@ -6,9 +6,12 @@
 #define MAXLINE 4096
 
 extern vector<char *>serverList;
-extern vector<int>sockfd;
-extern fd_set allset;
-// extern int maxfd;
+vector<int>sockfd;
+fd_set allset;
+
+void initSock() {
+    FD_ZERO(&allset);
+}
 
 void writeSocket(char *port, string& str) {
     int sock = -1;
