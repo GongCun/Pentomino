@@ -13,6 +13,7 @@
 #include <errno.h>
 #include <sys/select.h>
 #include <sys/time.h>
+#include <time.h>
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h" // for stringify JSON
 #include "rapidjson/pointer.h"

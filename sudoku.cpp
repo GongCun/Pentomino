@@ -12,6 +12,7 @@ char *output;
 vector < vector<bool> > possible;
 vector < vector<int> > _groups_of(81);
 vector<char *>serverList;
+time_t start;
 
 const int nCol = 9 * (9 + 9 + 9 + 9);
 

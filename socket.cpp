@@ -1,12 +1,18 @@
 #include "dlx.hpp"
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <strings.h>
 
 #define MAXLINE 4096
 
 extern vector<char *>serverList;
-vector<int>sockfd;
+extern time_t start;
+struct sockinfo {
+    int fd;
+    string address;
+};
+vector<sockinfo>socklist;
 fd_set allset;
 
 void initSock() {
@@ -22,7 +28,6 @@ void writeSocket(char *port, string& str) {
         it = serverList.begin();
 
     char *server = *it++;
-    fprintf(stderr, "server: %s\n", server);
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("socket error");
@@ -43,7 +48,14 @@ void writeSocket(char *port, string& str) {
         exit(-1);
     }
 
-    sockfd.push_back(sock);
+    fprintf(stderr, "open: %s, fd: %d\n", server, sock);
+
+    struct sockinfo sockinfo = {
+        .fd = sock,
+        .address = server
+    };
+    
+    socklist.push_back(sockinfo);
     FD_SET(sock, &allset);
     // if (sock > maxfd) maxfd = sock;
 
@@ -69,13 +81,18 @@ void writeSocket(char *port, string& str) {
     }
 }
 
+static bool comp(sockinfo a, sockinfo b) {
+    return (a.fd < b.fd);
+}
+
 void waitSlave() {
     int n, maxfd;
     fd_set rset;
 
     for ( ; ; ) {
         rset = allset;
-        maxfd = *max_element(sockfd.begin(), sockfd.end());
+        maxfd = max_element(socklist.begin(), socklist.end(), comp)->fd;
+        
         if ((n = select(maxfd + 1, &rset, NULL, NULL, NULL)) < 0) {
             perror("select");
             exit(-1);
@@ -83,22 +100,30 @@ void waitSlave() {
             break;
         }
 
-        for (vector<int>::iterator it = sockfd.begin();
-             it != sockfd.end(); ) {
-            int fd = *it;
+        for (vector<sockinfo>::iterator it = socklist.begin();
+             it != socklist.end(); ) {
+            int fd = it->fd;
+
+            // statistic the task over time
+            cout << "escape: " << time(NULL) - start
+                 << " tasks: " << socklist.size() << endl;
+            
             if (FD_ISSET(fd, &rset)) {
+                cout << "close: "
+                     << it->address
+                     << ", fd: " << fd << endl;
                 if (close(fd) < 0) {
                     perror("close");
                     exit(-1);
                 }
                 FD_CLR(fd, &allset);
-                fprintf(stderr, "%d closed\n", fd);
-                it = sockfd.erase(it);
+                // fprintf(stderr, "%d closed\n", fd);
+                it = socklist.erase(it);
             } else {
                 ++it;
             }
         }
 
-        if (sockfd.empty()) break;
+        if (socklist.empty()) break;
     }
 }

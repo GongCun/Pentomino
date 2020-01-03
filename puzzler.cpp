@@ -21,6 +21,7 @@ string puzzle;
 char *port;
 char *output;
 vector<char *>serverList;
+time_t start;
 
 class Position {
 public:
@@ -530,6 +531,7 @@ static void help(const char *s) {
 
 int main(int argc, char *argv[]) {
     int c;
+    start = time(NULL);
 
     while ((c = getopt(argc, argv, "mb:r:s:p:o:")) != EOF) {
         switch (c) {
