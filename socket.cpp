@@ -8,19 +8,11 @@
 
 extern vector<char *>serverList;
 extern time_t start;
-struct sockinfo {
-    int fd;
-    string address;
-};
-vector<sockinfo>socklist;
-fd_set allset;
-
-void initSock() {
-    FD_ZERO(&allset);
-}
 
 void writeSocket(char *port, string& str) {
     int sock = -1;
+    pid_t pid;
+    
     struct sockaddr_in serv;
     static vector<char *>::iterator it = serverList.begin();
 
@@ -43,87 +35,108 @@ void writeSocket(char *port, string& str) {
         exit(-1);
     }
 
-    if (connect(sock, (struct sockaddr *)&serv, sizeof(serv)) < 0) {
-        perror("connect");
+
+    // Fork the task for doing the map work.
+    if ((pid = fork()) < 0) {
+        perror("fork");
         exit(-1);
     }
 
-    fprintf(stderr, "open: %s, fd: %d\n", server, sock);
-
-    struct sockinfo sockinfo = {
-        .fd = sock,
-        .address = server
-    };
-    
-    socklist.push_back(sockinfo);
-    FD_SET(sock, &allset);
-    // if (sock > maxfd) maxfd = sock;
-
-    const char *p = str.c_str();
-    int len = str.size();
-    while (len > 0) {
-        size_t writelen = (MAXLINE < len ? MAXLINE : len);
-        if (write(sock, p, writelen) < 0) {
-            perror("write");
+    if (pid == 0) {
+        
+        if (connect(sock, (struct sockaddr *)&serv, sizeof(serv)) < 0) {
+            perror("connect");
             exit(-1);
         }
-        p += writelen;
-        len -= writelen;
-    }
 
-    // if (close(sock) < 0) {
-    //     perror("close");
-    //     exit(-1);
-    // }
-    if (shutdown(sock, SHUT_WR) < 0) {
-        perror("shutdown");
+        fprintf(stderr, "process %ld start at: %ld sec, ip: %s, fd: %d\n",
+                (long)getpid(), time(NULL) - start, server, sock);
+
+        const char *p = str.c_str();
+        int len = str.size();
+        while (len > 0) {
+            size_t writelen = (MAXLINE < len ? MAXLINE : len);
+            if (write(sock, p, writelen) < 0) {
+                perror("write");
+                exit(-1);
+            }
+            p += writelen;
+            len -= writelen;
+        }
+
+        if (shutdown(sock, SHUT_WR) < 0) {
+            perror("shutdown");
+            exit(-1);
+        }
+
+        // Waiting the task finish
+        fd_set rset;
+        FD_ZERO(&rset);
+        FD_SET(sock, &rset);
+        // suppose task process won't say anything
+        if (select(sock + 1, &rset, NULL, NULL, NULL) < 0) {
+            perror("select");
+            exit(-1);
+        }
+        exit(0);
+    } // child process exited
+
+    // Parent process continued: record the process information and input data
+    // for re-execute the backup tasks.
+    char tmpfile[] = "./inputXXXXXX";
+    int f;
+    if ((f = mkstemp(tmpfile)) < 0) {
+        perror("mkstemp");
         exit(-1);
     }
+    close(f);
+    fprintf(stderr, "tmpfile: %s\n", tmpfile);
+    
+    struct taskinfo taskinfo;
+    taskinfo.pid = pid;
+    taskinfo.fd = sock; // keep the fd open for backup tasks
+    taskinfo.ip = server;
+    taskinfo.input = string(tmpfile);
+    taskinfo.sa = serv; // struct copy
+    taskinfo.state = in_progress;
+    tasklist.push_back(taskinfo);
+    ofstream o(tmpfile);
+    if (!o.is_open()) {
+        fprintf(stderr, "open %s error: %s\n", tmpfile, strerror(errno));
+        exit(-1);
+    }
+    o << str;
+    o.close();
+
 }
 
-static bool comp(sockinfo a, sockinfo b) {
-    return (a.fd < b.fd);
+// static bool comp(sockinfo a, sockinfo b) {
+//     return (a.fd < b.fd);
+// }
+static bool task_completed(void) {
+    for (auto &t : tasklist)
+        if (t.state == in_progress) return false;
+
+    return true; // idle or completed
 }
 
 void waitSlave() {
-    int n, maxfd;
-    fd_set rset;
+    pid_t pid;
 
     for ( ; ; ) {
-        rset = allset;
-        maxfd = max_element(socklist.begin(), socklist.end(), comp)->fd;
-        
-        if ((n = select(maxfd + 1, &rset, NULL, NULL, NULL)) < 0) {
-            perror("select");
-            exit(-1);
-        } else if (n == 0) {
-            break;
-        }
-
-        for (vector<sockinfo>::iterator it = socklist.begin();
-             it != socklist.end(); ) {
-            int fd = it->fd;
-
-            // statistic the task over time
-            cout << "escape: " << time(NULL) - start
-                 << " tasks: " << socklist.size() << endl;
-            
-            if (FD_ISSET(fd, &rset)) {
-                cout << "close: "
-                     << it->address
-                     << ", fd: " << fd << endl;
-                if (close(fd) < 0) {
-                    perror("close");
-                    exit(-1);
+        while ((pid = waitpid((pid_t)-1, NULL, 0)) > 0) {
+            for (auto it = tasklist.begin(); it != tasklist.end(); ++it) {
+                if (it->pid == pid) {
+                    it->state = completed;
+                    close(it->fd);
+                    fprintf(stderr, "completed: process %ld, fd %d, ip %s, data %s\n",
+                            (long)it->pid, it->fd, it->ip, (it->input).c_str());
+                    break;
                 }
-                FD_CLR(fd, &allset);
-                // fprintf(stderr, "%d closed\n", fd);
-                it = socklist.erase(it);
-            } else {
-                ++it;
             }
         }
-
-        if (socklist.empty()) break;
+        if (errno != EINTR || task_completed())
+            break;
     }
+
 }

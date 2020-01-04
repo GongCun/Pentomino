@@ -22,6 +22,7 @@ char *port;
 char *output;
 vector<char *>serverList;
 time_t start;
+vector<taskinfo>tasklist;
 
 class Position {
 public:
@@ -529,6 +530,17 @@ static void help(const char *s) {
     exit(-1);
 }
 
+static void sig_alarm(int signo) {
+    int tasks = 0;
+    for (auto &v: tasklist) {
+        if (v.state == in_progress)
+            ++tasks;
+    }
+    printf("escape %ld sec, tasks = %d\n", time(NULL) - start, tasks);
+    
+    alarm(1);
+}
+
 int main(int argc, char *argv[]) {
     int c;
     start = time(NULL);
@@ -563,8 +575,15 @@ int main(int argc, char *argv[]) {
     if (master) {
         if (serverList.empty() || !port) help(argv[0]);
 
-        initSock();
+        // initSock();
+        if (signal(SIGALRM, sig_alarm) == SIG_ERR) {
+            perror("signal");
+            exit(-1);
+        }
+
         distribute(branch, new DLX(p_));
+
+        alarm(1);
         waitSlave();
         return 0;
     }

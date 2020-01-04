@@ -13,7 +13,11 @@
 #include <errno.h>
 #include <sys/select.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <netinet/in.h>
 #include <time.h>
+#include <signal.h>
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h" // for stringify JSON
 #include "rapidjson/pointer.h"
@@ -79,4 +83,16 @@ public:
 
 void distribute(unsigned, DLX*);
 void dlxSerialize(string&, DLX*);
+
+enum State { idle = 0, in_progress, completed };
+typedef struct sockaddr_in SA;
+struct taskinfo {
+    pid_t   pid;
+    int     fd;
+    SA      sa;
+    char   *ip;
+    string  input;
+    State   state;
+};
+extern vector<taskinfo>tasklist;
 #endif
