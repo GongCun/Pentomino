@@ -536,7 +536,7 @@ static void sig_alarm(int signo) {
         if (v.state == in_progress)
             ++tasks;
     }
-    printf("escape %ld sec, tasks = %d\n", time(NULL) - start, tasks);
+    printf("escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, tasks);
     
     alarm(1);
 }
@@ -589,7 +589,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Slave process
-    DLX dlx(cin, puzzle);
+    DLX dlx(stdin, puzzle);
     if (output == NULL) {
         help(argv[0]);
     }

@@ -198,13 +198,14 @@ DLX::DLX(Node*& h, int& nCol_, int& nRow_, vector<int>& solutions_) :
 
 
 //
-DLX::DLX(istream& in, string& puzzle) {
-    istreambuf_iterator<char> eos;
-    string s(istreambuf_iterator<char>(in), eos);
-    Document d;
+DLX::DLX(FILE *in, string& puzzle) {
+    // istreambuf_iterator<char> eos;
+    // string s(istreambuf_iterator<char>(in), eos);
     header = new Node();
-
-    d.Parse(s.c_str());
+    char buf[MAXBUF];
+    FileReadStream is(in, buf, sizeof(buf));
+    Document d;
+    d.ParseStream(is);
 
     puzzle = string(d["puzzle"].GetString());
     nCol = d["nCol"].GetInt();

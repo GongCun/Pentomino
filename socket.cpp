@@ -8,6 +8,7 @@
 
 extern vector<char *>serverList;
 extern time_t start;
+int tasks;
 
 void writeSocket(char *port, string& str) {
     int sock = -1;
@@ -49,9 +50,6 @@ void writeSocket(char *port, string& str) {
             exit(-1);
         }
 
-        fprintf(stderr, "process %ld start at: %ld sec, ip: %s, fd: %d\n",
-                (long)getpid(), time(NULL) - start, server, sock);
-
         const char *p = str.c_str();
         int len = str.size();
         while (len > 0) {
@@ -81,8 +79,12 @@ void writeSocket(char *port, string& str) {
         exit(0);
     } // child process exited
 
+
     // Parent process continued: record the process information and input data
     // for re-execute the backup tasks.
+    fprintf(stderr, "process %ld start at %ld sec, tasks: %d, ip: %s, fd: %d\n",
+            (long)pid, time(NULL) - start, ++tasks, server, sock);
+
     char tmpfile[] = "./inputXXXXXX";
     int f;
     if ((f = mkstemp(tmpfile)) < 0) {
