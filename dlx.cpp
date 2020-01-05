@@ -199,11 +199,12 @@ DLX::DLX(Node*& h, int& nCol_, int& nRow_, vector<int>& solutions_) :
 
 //
 DLX::DLX(istream& in, string& puzzle) {
+    header = new Node();
+
     istreambuf_iterator<char> eos;
     string s(istreambuf_iterator<char>(in), eos);
     Document d;
     d.Parse(s.c_str());
-    header = new Node();
 
     puzzle = string(d["puzzle"].GetString());
     nCol = d["nCol"].GetInt();
