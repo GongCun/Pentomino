@@ -82,8 +82,6 @@ void writeSocket(char *port, string& str) {
 
     // Parent process continued: record the process information and input data
     // for re-execute the backup tasks.
-    fprintf(stderr, "process %ld start at %ld sec, tasks: %d, ip: %s, fd: %d\n",
-            (long)pid, time(NULL) - start, ++tasks, server, sock);
 
     char tmpfile[] = "./inputXXXXXX";
     int f;
@@ -92,7 +90,9 @@ void writeSocket(char *port, string& str) {
         exit(-1);
     }
     close(f);
-    fprintf(stderr, "tmpfile: %s\n", tmpfile);
+
+    fprintf(stderr, "process %ld start at %ld sec, tasks: %d, ip: %s, fd: %d, data: %s\n",
+            (long)pid, time(NULL) - start, ++tasks, server, sock, tmpfile);
     
     struct taskinfo taskinfo;
     taskinfo.pid = pid;

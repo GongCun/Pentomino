@@ -589,7 +589,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Slave process
-    DLX dlx(stdin, puzzle);
+    DLX dlx(cin, puzzle);
     if (output == NULL) {
         help(argv[0]);
     }

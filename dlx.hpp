@@ -21,11 +21,10 @@
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h" // for stringify JSON
 #include "rapidjson/pointer.h"
-#include "rapidjson/filereadstream.h"
+// #include "rapidjson/filereadstream.h"
 
 #define BUFLEN 4096
-#define MAXBUF 65536
-
+// #define MAXBUF 65536
 using namespace std;
 using namespace rapidjson;
 
@@ -56,7 +55,7 @@ public:
 
     DLX(vector< vector<bool> >& p_);
     DLX(Node*&, int&, int&, vector<int>&);
-    DLX(FILE *, string&);
+    DLX(istream&, string&);
 
     ~DLX() {
         if (!header) delete header;
