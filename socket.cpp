@@ -131,8 +131,8 @@ void waitSlave() {
                 if (it->pid == pid) {
                     it->state = completed;
                     close(it->fd);
-                    fprintf(stderr, "completed: process %ld, fd %d, ip %s, data %s\n",
-                            (long)it->pid, it->fd, it->ip, (it->input).c_str());
+                    fprintf(stderr, "pcocess %ld completed at %ld sec, fd %d, ip %s, data %s\n",
+                            (long)it->pid, time(NULL) - start, it->fd, it->ip, (it->input).c_str());
                     break;
                 }
             }

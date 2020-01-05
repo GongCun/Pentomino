@@ -522,7 +522,24 @@ extern void waitSlave(void);
 extern void initSock(void);
 
 void writeString(string& str) {
+    sigset_t newmask, oldmask;
+    sigemptyset(&newmask);
+    sigaddset(&newmask, SIGALRM);
+    sigaddset(&newmask, SIGCHLD);
+    if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0) {
+        perror("sigprocmask");
+        exit(-1);
+    }
+
+    // critical region
     writeSocket(port, str);
+
+    // restore signal mask, will unblock SIGALRM/SIGCHLD
+    if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0) {
+        perror("sigprocmask");
+        exit(-1);
+    }
+
 }
 
 static void help(const char *s) {
@@ -539,6 +556,22 @@ static void sig_alarm(int signo) {
     printf("escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, tasks);
     
     alarm(1);
+}
+
+static void sig_chld(int signo) {
+    pid_t pid;
+
+    while ((pid = waitpid((pid_t)-1, NULL, WNOHANG)) > 0) {
+        for (auto it = tasklist.begin(); it != tasklist.end(); ++it) {
+            if (it->pid == pid) {
+                it->state = completed;
+                close(it->fd);
+                fprintf(stderr, "pcocess %ld completed at %ld sec, fd %d, ip %s, data %s\n",
+                        (long)it->pid, time(NULL) - start, it->fd, it->ip, (it->input).c_str());
+                break;
+            }
+        }
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -580,10 +613,18 @@ int main(int argc, char *argv[]) {
             perror("signal");
             exit(-1);
         }
+        if (signal(SIGCHLD, sig_chld) == SIG_ERR) {
+            perror("signal");
+            exit(-1);
+        }
+        alarm(1);
 
         distribute(branch, new DLX(p_));
 
-        alarm(1);
+        if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
+            perror("signal");
+            exit(-1);
+        }
         waitSlave();
         return 0;
     }
