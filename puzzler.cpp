@@ -23,6 +23,7 @@ char *output;
 vector<char *>serverList;
 time_t start;
 vector<taskinfo>tasklist;
+char *input;
 
 class Position {
 public:
@@ -543,7 +544,7 @@ void writeString(string& str) {
 }
 
 static void help(const char *s) {
-    fprintf(stderr, "%s -m -b branches -r runs -s server -p port -o output <json\n", s);
+    fprintf(stderr, "%s -m -b branches -r runs -s server -p port -o output -i input <json\n", s);
     exit(-1);
 }
 
@@ -578,7 +579,7 @@ int main(int argc, char *argv[]) {
     int c;
     start = time(NULL);
 
-    while ((c = getopt(argc, argv, "mb:r:s:p:o:")) != EOF) {
+    while ((c = getopt(argc, argv, "mb:r:s:p:o:i:")) != EOF) {
         switch (c) {
         case 'm' :
             master = 1;
@@ -599,10 +600,14 @@ int main(int argc, char *argv[]) {
         case 'o':
             output = optarg;
             break;
+        case 'i':
+            input = optarg;
+            break;
         case '?':
             help(argv[0]);
         }
     }
+
     init();
     
     if (master) {
@@ -619,7 +624,17 @@ int main(int argc, char *argv[]) {
         }
         alarm(1);
 
-        distribute(branch, new DLX(p_));
+        if (!input) {
+            distribute(branch, new DLX(p_));
+        } else {
+            ifstream myfile(input);
+            if (!myfile.is_open()) {
+                fprintf(stderr, "open %s: %s\n", input, strerror(errno));
+                exit(-1);
+            }
+            distribute(branch, new DLX(myfile, puzzle));
+            myfile.close();
+        }
 
         if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
             perror("signal");
