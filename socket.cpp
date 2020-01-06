@@ -115,30 +115,3 @@ void writeSocket(char *port, string& str) {
 // static bool comp(sockinfo a, sockinfo b) {
 //     return (a.fd < b.fd);
 // }
-static bool task_completed(void) {
-    for (auto &t : tasklist)
-        if (t.state == in_progress) return false;
-
-    return true; // idle or completed
-}
-
-void waitSlave() {
-    pid_t pid;
-
-    for ( ; ; ) {
-        while ((pid = waitpid((pid_t)-1, NULL, 0)) > 0) {
-            for (auto it = tasklist.begin(); it != tasklist.end(); ++it) {
-                if (it->pid == pid) {
-                    it->state = completed;
-                    close(it->fd);
-                    fprintf(stderr, "pcocess %ld completed at %ld sec, fd %d, ip %s, data %s\n",
-                            (long)it->pid, time(NULL) - start, it->fd, it->ip, (it->input).c_str());
-                    break;
-                }
-            }
-        }
-        if (errno != EINTR || task_completed())
-            break;
-    }
-
-}
