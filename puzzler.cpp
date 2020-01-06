@@ -582,7 +582,7 @@ static void sig_alarm(int signo) {
         if (v.state == in_progress)
             ++tasks;
     }
-    printf("escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, tasks);
+    fprintf(stderr, "escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, tasks);
     
     alarm(1);
 }
@@ -605,6 +605,18 @@ static void sig_chld(int signo) {
 
 int main(int argc, char *argv[]) {
     int c;
+    char trace[1024];
+    sprintf(trace, "./trace.%ld", (long)getpid());
+    if (freopen(trace, "w+", stderr) == NULL) {
+        perror("freopen");
+        exit(-1);
+    }
+    if (setvbuf(stderr, NULL, _IONBF, 0) != 0) {
+        printf("setvbuf error\n");
+        exit(-1);
+    }
+    printf("trace file: %s\n", trace);
+
     start = time(NULL);
 
     while ((c = getopt(argc, argv, "mb:r:s:p:o:i:")) != EOF) {
