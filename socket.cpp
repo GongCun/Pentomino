@@ -8,7 +8,7 @@
 
 extern vector<char *>serverList;
 extern time_t start;
-int tasks;
+extern int tasks;
 
 void writeSocket(char *port, string& str) {
     int sock = -1;
@@ -91,10 +91,13 @@ void writeSocket(char *port, string& str) {
     }
     close(f);
 
+    time_t t = time(NULL);
     fprintf(stderr, "process %ld start at %ld sec, tasks: %d, ip: %s, fd: %d, data: %s\n",
-            (long)pid, time(NULL) - start, ++tasks, server, sock, tmpfile);
-    
+            (long)pid, t - start, ++tasks, server, sock, tmpfile);
+
     struct taskinfo taskinfo;
+    bzero(&taskinfo, sizeof(struct taskinfo));
+    taskinfo.start = t;
     taskinfo.pid = pid;
     taskinfo.fd = sock; // keep the fd open for backup tasks
     taskinfo.ip = server;

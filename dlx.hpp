@@ -93,6 +93,7 @@ struct taskinfo {
     char   *ip;
     string  input;
     State   state;
+    time_t  start, end;
 };
 extern vector<taskinfo>tasklist;
 #endif

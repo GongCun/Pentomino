@@ -7,6 +7,7 @@
 // #include <stdlib.h>
 #include "dlx.hpp"
 #include <map>
+// #define _GNU_SOURCE
 using namespace std;
 
 const int ROW = 5;
@@ -24,6 +25,11 @@ vector<char *>serverList;
 time_t start;
 vector<taskinfo>tasklist;
 char *input;
+int tasks;
+int offset, timeout;
+int cmd_argc;
+char *cmd[4096];
+
 
 class Position {
 public:
@@ -538,8 +544,10 @@ void waitSlave() {
                 if (it->pid == pid) {
                     it->state = completed;
                     close(it->fd);
+                    time_t t = time(NULL);
+                    it->end = t;
                     fprintf(stderr, "pcocess %ld completed at %ld sec, fd %d, ip %s, data %s\n",
-                            (long)it->pid, time(NULL) - start, it->fd, it->ip, (it->input).c_str());
+                            (long)it->pid, t - start, it->fd, it->ip, (it->input).c_str());
                     break;
                 }
             }
@@ -572,29 +580,83 @@ void writeString(string& str) {
 }
 
 static void help(const char *s) {
-    fprintf(stderr, "%s -m -b branches -r runs -s server -p port -o output -i input <json\n", s);
+    fprintf(stderr, "%s -m -b branches -r runs -s server -p port -o output -i input -t timeout -z offset <json\n", s);
     exit(-1);
 }
 
 static void sig_alarm(int signo) {
-    int tasks = 0;
+    int runs = 0;
     for (auto &v: tasklist) {
         if (v.state == in_progress)
-            ++tasks;
+            ++runs;
     }
-    fprintf(stderr, "escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, tasks);
-    
+    fprintf(stderr, "escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, runs);
+
+    for (auto &v: tasklist) {
+        if (v.state == in_progress && time(NULL) - v.start > timeout) {
+            sigset_t newmask, oldmask;
+            sigemptyset(&newmask);
+            sigaddset(&newmask, SIGCHLD);
+            if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0) {
+                perror("sigprocmask");
+                exit(-1);
+            }
+
+            if (kill(v.pid, SIGTERM) < 0) {
+                perror("kill");
+                exit(-1);
+            }
+
+            pid_t pid;
+            time_t t = time(NULL);
+            if ((pid = fork()) == 0) {
+                if (asprintf(&cmd[cmd_argc], "-i %s -z %ld", v.input.c_str(), t - start) < 0) {
+                    perror("asprintf");
+                    exit(-1);
+                }
+                cmd[cmd_argc + 1] = NULL;
+                // cmd[cmd_argc] = strdup("-i");
+                // cmd[cmd_argc + 1] = strdup(v.input.c_str());
+                // cmd[cmd_argc + 2] = NULL;
+                execv(cmd[0], cmd);
+                exit(-1);
+            } else if (pid < 0) {
+                perror("fork");
+                exit(-1);
+            }
+
+            fprintf(stderr, "backup %ld start at %ld sec, tasks: %d, data: %s\n",
+                    (long)pid, t - start, ++tasks, v.input.c_str());
+
+            struct taskinfo taskinfo;
+            bzero(&taskinfo, sizeof(taskinfo));
+            taskinfo.start = t;
+            taskinfo.pid = pid;
+            taskinfo.state = in_progress;
+            taskinfo.input = v.input;
+            tasklist.push_back(taskinfo);
+
+            if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0) {
+                perror("sigprocmask");
+                exit(-1);
+            }
+        }
+    }
+
     alarm(1);
 }
 
 static void sig_chld(int signo) {
     pid_t pid;
+    int status;
 
-    while ((pid = waitpid((pid_t)-1, NULL, WNOHANG)) > 0) {
+    while ((pid = waitpid((pid_t)-1, &status, WNOHANG)) > 0) {
         for (auto it = tasklist.begin(); it != tasklist.end(); ++it) {
             if (it->pid == pid) {
                 it->state = completed;
                 close(it->fd);
+                if (WIFSIGNALED(status))
+                    fprintf(stderr, "signal %d ", WTERMSIG(status));
                 fprintf(stderr, "pcocess %ld completed at %ld sec, fd %d, ip %s, data %s\n",
                         (long)it->pid, time(NULL) - start, it->fd, it->ip, (it->input).c_str());
                 break;
@@ -606,20 +668,10 @@ static void sig_chld(int signo) {
 int main(int argc, char *argv[]) {
     int c;
     char trace[1024];
-    sprintf(trace, "./trace.%ld", (long)getpid());
-    if (freopen(trace, "w+", stderr) == NULL) {
-        perror("freopen");
-        exit(-1);
-    }
-    if (setvbuf(stderr, NULL, _IONBF, 0) != 0) {
-        printf("setvbuf error\n");
-        exit(-1);
-    }
-    printf("trace file: %s\n", trace);
 
     start = time(NULL);
 
-    while ((c = getopt(argc, argv, "mb:r:s:p:o:i:")) != EOF) {
+    while ((c = getopt(argc, argv, "mb:r:s:p:o:i:t:z:")) != EOF) {
         switch (c) {
         case 'm' :
             master = 1;
@@ -643,15 +695,36 @@ int main(int argc, char *argv[]) {
         case 'i':
             input = optarg;
             break;
+        case 't':
+            timeout = atoi(optarg);
+            break;
+        case 'z':
+            offset = atoi(optarg);
+            start -= offset;
+            break;
         case '?':
             help(argv[0]);
         }
     }
 
+    for (cmd_argc = 0; cmd_argc < argc; cmd_argc++)
+        cmd[cmd_argc] = strdup(argv[cmd_argc]);
+
     init();
     
     if (master) {
         if (serverList.empty() || !port) help(argv[0]);
+
+        sprintf(trace, "./trace.%ld", (long)getpid());
+        if (freopen(trace, "w+", stderr) == NULL) {
+            perror("freopen");
+            exit(-1);
+        }
+        if (setvbuf(stderr, NULL, _IONBF, 0) != 0) {
+            printf("setvbuf error\n");
+            exit(-1);
+        }
+        printf("trace file: %s\n", trace);
 
         // initSock();
         if (signal(SIGALRM, sig_alarm) == SIG_ERR) {
@@ -676,11 +749,12 @@ int main(int argc, char *argv[]) {
             myfile.close();
         }
 
-        if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
-            perror("signal");
-            exit(-1);
-        }
+        // if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
+        //     perror("signal");
+        //     exit(-1);
+        // }
         waitSlave();
+
         return 0;
     }
 
