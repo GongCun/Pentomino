@@ -629,8 +629,18 @@ static void sig_alarm(int signo) {
                 cmd[cmd_argc + 5] = strdup(v.ip);
                 cmd[cmd_argc + 6] = NULL;
 
-                execv(cmd[0], cmd);
-                exit(-1);
+                string command;
+                for (int i = 0; cmd[i]; i++)
+                    command += string(cmd[i]) + " ";
+
+                //fprintf(stderr, "command = %s\n", command.c_str());
+                //execv(cmd[0], cmd);
+                if (setsid() == -1) {
+                    perror("setsid");
+                    exit(-1);
+                }
+                system(command.c_str());
+                exit(0);
             } else if (pid < 0) {
                 perror("fork");
                 exit(-1);
