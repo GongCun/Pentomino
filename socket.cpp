@@ -9,6 +9,7 @@
 extern vector<char *>serverList;
 extern time_t start;
 extern int tasks;
+extern char *exclude;
 
 void writeSocket(char *port, string& str) {
     int sock = -1;
@@ -17,8 +18,14 @@ void writeSocket(char *port, string& str) {
     struct sockaddr_in serv;
     static vector<char *>::iterator it = serverList.begin();
 
+a:
     if (it == serverList.end())
         it = serverList.begin();
+
+    if (exclude && strcmp(exclude, *it) == 0 && serverList.size() != 1) {
+        it++;
+        goto a;
+    }
 
     char *server = *it++;
 

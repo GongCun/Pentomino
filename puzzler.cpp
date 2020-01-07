@@ -22,6 +22,7 @@ string puzzle;
 char *port;
 char *output;
 vector<char *>serverList;
+char *exclude;
 time_t start;
 vector<taskinfo>tasklist;
 char *input;
@@ -582,7 +583,7 @@ void writeString(string& str) {
 }
 
 static void help(const char *s) {
-    fprintf(stderr, "%s -m -b branches -r runs -s server -p port -o output -i input -t timeout -z offset <json\n", s);
+    fprintf(stderr, "%s -m -b branches -r runs -s server -p port -o output -i input -t timeout -z offset -x exclude <json\n", s);
     exit(-1);
 }
 
@@ -624,7 +625,9 @@ static void sig_alarm(int signo) {
                     perror("asprintf");
                     exit(-1);
                 }
-                cmd[cmd_argc + 4] = NULL;
+                cmd[cmd_argc + 4] = strdup("-x");
+                cmd[cmd_argc + 5] = strdup(v.ip);
+                cmd[cmd_argc + 6] = NULL;
 
                 execv(cmd[0], cmd);
                 exit(-1);
@@ -684,7 +687,7 @@ int main(int argc, char *argv[]) {
 
     start = time(NULL);
 
-    while ((c = getopt(argc, argv, "mb:r:s:p:o:i:t:z:")) != EOF) {
+    while ((c = getopt(argc, argv, "mb:r:s:p:o:i:t:z:x:")) != EOF) {
         switch (c) {
         case 'm' :
             master = 1;
@@ -714,6 +717,9 @@ int main(int argc, char *argv[]) {
         case 'z':
             offset = atoi(optarg);
             start -= offset;
+            break;
+        case 'x':
+            exclude = optarg;
             break;
         case '?':
             help(argv[0]);
