@@ -587,6 +587,30 @@ static void help(const char *s) {
     exit(-1);
 }
 
+static void sig_chld(int signo) {
+    pid_t pid;
+    int status;
+
+    if (signal(SIGCHLD, sig_chld) == SIG_ERR) {
+        perror("signal");
+        exit(-1);
+    }
+
+    while ((pid = waitpid((pid_t)-1, &status, WNOHANG)) > 0) {
+        for (auto it = tasklist.begin(); it != tasklist.end(); ++it) {
+            if (it->pid == pid) {
+                it->state = completed;
+                close(it->fd);
+                if (WIFSIGNALED(status))
+                    fprintf(stderr, "signal %d ", WTERMSIG(status));
+                fprintf(stderr, "pcocess %ld completed at %ld sec, fd %d, ip %s, data %s\n",
+                        (long)it->pid, time(NULL) - start, it->fd, it->ip, (it->input).c_str());
+                break;
+            }
+        }
+    }
+}
+
 static void sig_alarm(int signo) {
     int runs = 0;
     for (auto &v: tasklist) {
@@ -594,6 +618,15 @@ static void sig_alarm(int signo) {
             ++runs;
     }
     fprintf(stderr, "escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, runs);
+
+    if (signal(SIGALRM, sig_alarm) == SIG_ERR) {
+        perror("signal");
+        exit(-1);
+    }
+    if (signal(SIGCHLD, sig_chld) == SIG_ERR) {
+        perror("signal");
+        exit(-1);
+    }
 
     for (auto &v: tasklist) {
         if (v.state == in_progress && 
@@ -629,6 +662,9 @@ static void sig_alarm(int signo) {
                 cmd[cmd_argc + 5] = strdup(v.ip);
                 cmd[cmd_argc + 6] = NULL;
 
+                execv(cmd[0], cmd);
+                exit(-1);
+#if 0
                 string command;
                 for (int i = 0; cmd[i]; i++)
                     command += string(cmd[i]) + " ";
@@ -641,6 +677,7 @@ static void sig_alarm(int signo) {
                 }
                 system(command.c_str());
                 exit(0);
+#endif
             } else if (pid < 0) {
                 perror("fork");
                 exit(-1);
@@ -672,24 +709,6 @@ static void sig_alarm(int signo) {
     alarm(1);
 }
 
-static void sig_chld(int signo) {
-    pid_t pid;
-    int status;
-
-    while ((pid = waitpid((pid_t)-1, &status, WNOHANG)) > 0) {
-        for (auto it = tasklist.begin(); it != tasklist.end(); ++it) {
-            if (it->pid == pid) {
-                it->state = completed;
-                close(it->fd);
-                if (WIFSIGNALED(status))
-                    fprintf(stderr, "signal %d ", WTERMSIG(status));
-                fprintf(stderr, "pcocess %ld completed at %ld sec, fd %d, ip %s, data %s\n",
-                        (long)it->pid, time(NULL) - start, it->fd, it->ip, (it->input).c_str());
-                break;
-            }
-        }
-    }
-}
 
 int main(int argc, char *argv[]) {
     int c;
