@@ -315,8 +315,23 @@ void distribute(unsigned k, DLX* root) {
             if (t >= k) {
                 // q->solve();
                 string str;
+                sigset_t newmask, oldmask;
+                sigemptyset(&newmask);
+                sigaddset(&newmask, SIGALRM);
+                sigaddset(&newmask, SIGCHLD);
+                if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0) {
+                    perror("sigprocmask");
+                    exit(-1);
+                }
+
                 dlxSerialize(str, q);
                 writeString(str);
+
+                if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0) {
+                    perror("sigprocmask");
+                    exit(-1);
+                }
+
                 delete q;
                 continue;
             }

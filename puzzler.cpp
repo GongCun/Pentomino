@@ -559,6 +559,7 @@ void waitSlave() {
 }
 
 void writeString(string& str) {
+    /*
     sigset_t newmask, oldmask;
     sigemptyset(&newmask);
     sigaddset(&newmask, SIGALRM);
@@ -566,16 +567,17 @@ void writeString(string& str) {
     if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0) {
         perror("sigprocmask");
         exit(-1);
-    }
+    }*/
 
     // critical region
     writeSocket(port, str);
 
     // restore signal mask, will unblock SIGALRM/SIGCHLD
+    /*
     if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0) {
         perror("sigprocmask");
         exit(-1);
-    }
+    }*/
 
 }
 
@@ -593,10 +595,15 @@ static void sig_alarm(int signo) {
     fprintf(stderr, "escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, runs);
 
     for (auto &v: tasklist) {
-        if (v.state == in_progress && time(NULL) - v.start > timeout) {
+        if (v.state == in_progress && 
+                time(NULL) - v.start > timeout &&
+                v.backup == false) {
+
+
             sigset_t newmask, oldmask;
             sigemptyset(&newmask);
             sigaddset(&newmask, SIGCHLD);
+            sigaddset(&newmask, SIGALRM);
             if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0) {
                 perror("sigprocmask");
                 exit(-1);
@@ -610,14 +617,15 @@ static void sig_alarm(int signo) {
             pid_t pid;
             time_t t = time(NULL);
             if ((pid = fork()) == 0) {
-                if (asprintf(&cmd[cmd_argc], "-i %s -z %ld", v.input.c_str(), t - start) < 0) {
+                cmd[cmd_argc] = strdup("-i");
+                cmd[cmd_argc + 1] = strdup(v.input.c_str());
+                cmd[cmd_argc + 2] = strdup("-z");
+                if (asprintf(&cmd[cmd_argc + 3], "%ld", t - start) < 0) {
                     perror("asprintf");
                     exit(-1);
                 }
-                cmd[cmd_argc + 1] = NULL;
-                // cmd[cmd_argc] = strdup("-i");
-                // cmd[cmd_argc + 1] = strdup(v.input.c_str());
-                // cmd[cmd_argc + 2] = NULL;
+                cmd[cmd_argc + 4] = NULL;
+
                 execv(cmd[0], cmd);
                 exit(-1);
             } else if (pid < 0) {
@@ -629,12 +637,17 @@ static void sig_alarm(int signo) {
                     (long)pid, t - start, ++tasks, v.input.c_str());
 
             struct taskinfo taskinfo;
-            bzero(&taskinfo, sizeof(taskinfo));
+            //bzero(&taskinfo, sizeof(taskinfo));
             taskinfo.start = t;
+            taskinfo.end = 0;
+            taskinfo.ip = NULL;
+            taskinfo.fd = -1;
             taskinfo.pid = pid;
             taskinfo.state = in_progress;
             taskinfo.input = v.input;
+            taskinfo.backup = true; // don't re-execute the backup tasks
             tasklist.push_back(taskinfo);
+            
 
             if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0) {
                 perror("sigprocmask");

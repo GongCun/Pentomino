@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -pg -g -Wall --std=c++0x
+CFLAGS = -g -Wall --std=c++0x
 # CFLAGS = -g -Wall --std=c++0x
 # CFLAGS = -Ofast --std=c++0x
 # CFLAGS = -Ofast --std=c++0x -maix64

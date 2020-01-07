@@ -94,6 +94,7 @@ struct taskinfo {
     string  input;
     State   state;
     time_t  start, end;
+    bool    backup;
 };
 extern vector<taskinfo>tasklist;
 #endif

@@ -96,8 +96,10 @@ void writeSocket(char *port, string& str) {
             (long)pid, t - start, ++tasks, server, sock, tmpfile);
 
     struct taskinfo taskinfo;
-    bzero(&taskinfo, sizeof(struct taskinfo));
+    //bzero(&taskinfo, sizeof(struct taskinfo));
+    taskinfo.backup = false;
     taskinfo.start = t;
+    taskinfo.end = 0;
     taskinfo.pid = pid;
     taskinfo.fd = sock; // keep the fd open for backup tasks
     taskinfo.ip = server;
