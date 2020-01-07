@@ -31,6 +31,20 @@ int offset, timeout;
 int cmd_argc;
 char *cmd[4096];
 
+typedef void(*sigfunc_t)(int);
+extern "C" {
+    static sigfunc_t mysignal(int signo, sigset_t mask, sigfunc_t func);
+}
+static sigfunc_t mysignal(int signo, sigset_t mask, sigfunc_t func) {
+    struct sigaction act, oact;
+    act.sa_handler = func;
+    act.sa_mask = mask;
+    act.sa_flags = 0;
+    act.sa_flags |= SA_RESTART;
+    if (sigaction(signo, &act, &oact) < 0)
+        return (SIG_ERR);
+    return (oact.sa_handler);
+}
 
 class Position {
 public:
@@ -591,11 +605,6 @@ static void sig_chld(int signo) {
     pid_t pid;
     int status;
 
-    if (signal(SIGCHLD, sig_chld) == SIG_ERR) {
-        perror("signal");
-        exit(-1);
-    }
-
     while ((pid = waitpid((pid_t)-1, &status, WNOHANG)) > 0) {
         for (auto it = tasklist.begin(); it != tasklist.end(); ++it) {
             if (it->pid == pid) {
@@ -618,15 +627,6 @@ static void sig_alarm(int signo) {
             ++runs;
     }
     fprintf(stderr, "escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, runs);
-
-    if (signal(SIGALRM, sig_alarm) == SIG_ERR) {
-        perror("signal");
-        exit(-1);
-    }
-    if (signal(SIGCHLD, sig_chld) == SIG_ERR) {
-        perror("signal");
-        exit(-1);
-    }
 
     for (auto &v: tasklist) {
         if (v.state == in_progress && 
@@ -775,12 +775,18 @@ int main(int argc, char *argv[]) {
         printf("trace file: %s\n", trace);
 
         // initSock();
-        if (signal(SIGALRM, sig_alarm) == SIG_ERR) {
-            perror("signal");
+        sigset_t chldmask;
+        sigemptyset(&chldmask);
+        sigaddset(&chldmask, SIGCHLD);
+        if (mysignal(SIGALRM, chldmask, sig_alarm) == SIG_ERR) {
+            perror("mysignal");
             exit(-1);
         }
-        if (signal(SIGCHLD, sig_chld) == SIG_ERR) {
-            perror("signal");
+        sigset_t alrmask;
+        sigemptyset(&alrmask);
+        sigaddset(&alrmask, SIGALRM);
+        if (mysignal(SIGCHLD, alrmask, sig_chld) == SIG_ERR) {
+            perror("mysignal");
             exit(-1);
         }
         alarm(1);
