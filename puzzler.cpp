@@ -595,20 +595,23 @@ static void sig_alarm(int signo) {
     }
     fprintf(stderr, "escape %ld sec, in-progress tasks = %d\n", time(NULL) - start, runs);
 
-    for (auto &v: tasklist) {
+    for (vector<taskinfo>::iterator ptr = tasklist.begin();
+         ptr != tasklist.end(); ++ptr) {
+
+        sigset_t newmask, oldmask;
+        sigemptyset(&newmask);
+        sigaddset(&newmask, SIGCHLD);
+        sigaddset(&newmask, SIGALRM);
+        if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0) {
+            perror("sigprocmask");
+            exit(-1);
+        }
+
+        auto v = *ptr;
         if (v.state == in_progress && 
                 time(NULL) - v.start > timeout &&
                 v.backup == false) {
 
-
-            sigset_t newmask, oldmask;
-            sigemptyset(&newmask);
-            sigaddset(&newmask, SIGCHLD);
-            sigaddset(&newmask, SIGALRM);
-            if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0) {
-                perror("sigprocmask");
-                exit(-1);
-            }
 
             if (kill(v.pid, SIGTERM) < 0) {
                 perror("kill");
@@ -628,6 +631,15 @@ static void sig_alarm(int signo) {
                 cmd[cmd_argc + 4] = strdup("-x");
                 cmd[cmd_argc + 5] = strdup(v.ip);
                 cmd[cmd_argc + 6] = NULL;
+
+                sigset_t mask;
+                sigemptyset(&mask);
+                sigaddset(&mask, SIGALRM);
+                sigaddset(&mask, SIGCHLD);
+                if (sigprocmask(SIG_UNBLOCK, &mask, NULL) < 0) {
+                    perror("sigprocmask");
+                    exit(-1);
+                }
 
                 execv(cmd[0], cmd);
                 exit(-1);
@@ -650,12 +662,11 @@ static void sig_alarm(int signo) {
             taskinfo.input = v.input;
             taskinfo.backup = true; // don't re-execute the backup tasks
             tasklist.push_back(taskinfo);
-            
+        }
 
-            if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0) {
-                perror("sigprocmask");
-                exit(-1);
-            }
+        if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0) {
+            perror("sigprocmask");
+            exit(-1);
         }
     }
 
