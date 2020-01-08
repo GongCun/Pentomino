@@ -31,20 +31,6 @@ int offset, timeout;
 int cmd_argc;
 char *cmd[4096];
 
-typedef void(*sigfunc_t)(int);
-extern "C" {
-    static sigfunc_t mysignal(int signo, sigset_t mask, sigfunc_t func);
-}
-static sigfunc_t mysignal(int signo, sigset_t mask, sigfunc_t func) {
-    struct sigaction act, oact;
-    act.sa_handler = func;
-    act.sa_mask = mask;
-    act.sa_flags = 0;
-    act.sa_flags |= SA_RESTART;
-    if (sigaction(signo, &act, &oact) < 0)
-        return (SIG_ERR);
-    return (oact.sa_handler);
-}
 
 class Position {
 public:
@@ -601,25 +587,6 @@ static void help(const char *s) {
     exit(-1);
 }
 
-static void sig_chld(int signo) {
-    pid_t pid;
-    int status;
-
-    while ((pid = waitpid((pid_t)-1, &status, WNOHANG)) > 0) {
-        for (auto it = tasklist.begin(); it != tasklist.end(); ++it) {
-            if (it->pid == pid) {
-                it->state = completed;
-                close(it->fd);
-                if (WIFSIGNALED(status))
-                    fprintf(stderr, "signal %d ", WTERMSIG(status));
-                fprintf(stderr, "pcocess %ld completed at %ld sec, fd %d, ip %s, data %s\n",
-                        (long)it->pid, time(NULL) - start, it->fd, it->ip, (it->input).c_str());
-                break;
-            }
-        }
-    }
-}
-
 static void sig_alarm(int signo) {
     int runs = 0;
     for (auto &v: tasklist) {
@@ -676,20 +643,6 @@ static void sig_alarm(int signo) {
 
                 execv(cmd[0], cmd);
                 exit(-1);
-#if 0
-                string command;
-                for (int i = 0; cmd[i]; i++)
-                    command += string(cmd[i]) + " ";
-
-                //fprintf(stderr, "command = %s\n", command.c_str());
-                //execv(cmd[0], cmd);
-                if (setsid() == -1) {
-                    perror("setsid");
-                    exit(-1);
-                }
-                system(command.c_str());
-                exit(0);
-#endif
             } else if (pid < 0) {
                 perror("fork");
                 exit(-1);
@@ -720,6 +673,24 @@ static void sig_alarm(int signo) {
     alarm(1);
 }
 
+static void sig_chld(int signo) {
+    pid_t pid;
+    int status;
+
+    while ((pid = waitpid((pid_t)-1, &status, WNOHANG)) > 0) {
+        for (auto it = tasklist.begin(); it != tasklist.end(); ++it) {
+            if (it->pid == pid) {
+                it->state = completed;
+                close(it->fd);
+                if (WIFSIGNALED(status))
+                    fprintf(stderr, "signal %d ", WTERMSIG(status));
+                fprintf(stderr, "pcocess %ld completed at %ld sec, fd %d, ip %s, data %s\n",
+                        (long)it->pid, time(NULL) - start, it->fd, it->ip, (it->input).c_str());
+                break;
+            }
+        }
+    }
+}
 
 int main(int argc, char *argv[]) {
     int c;
@@ -786,18 +757,12 @@ int main(int argc, char *argv[]) {
         printf("trace file: %s\n", trace);
 
         // initSock();
-        sigset_t chldmask;
-        sigemptyset(&chldmask);
-        sigaddset(&chldmask, SIGCHLD);
-        if (mysignal(SIGALRM, chldmask, sig_alarm) == SIG_ERR) {
-            perror("mysignal");
+        if (signal(SIGALRM, sig_alarm) == SIG_ERR) {
+            perror("signal");
             exit(-1);
         }
-        sigset_t alrmask;
-        sigemptyset(&alrmask);
-        sigaddset(&alrmask, SIGALRM);
-        if (mysignal(SIGCHLD, alrmask, sig_chld) == SIG_ERR) {
-            perror("mysignal");
+        if (signal(SIGCHLD, sig_chld) == SIG_ERR) {
+            perror("signal");
             exit(-1);
         }
         alarm(1);
