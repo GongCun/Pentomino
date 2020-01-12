@@ -11,7 +11,26 @@ extern time_t start;
 extern int tasks;
 extern char *exclude;
 
-void writeSocket(char *port, string& str) {
+static void writeStr(const char *str, int fd) {
+    const char *p = str;
+    int len = strlen(str);
+    while (len > 0) {
+        size_t writelen = (MAXLINE < len ? MAXLINE : len);
+        if (write(fd, p, writelen) < 0) {
+            perror("write");
+            exit(-1);
+        }
+        p += writelen;
+        len -= writelen;
+    }
+    if (write(fd, "\n", 1) != 1) {
+        perror("write");
+        exit(-1);
+    }
+
+}
+
+void writeSocket(char *port, DLX *dlx) {
     int sock = -1;
     pid_t pid;
     
@@ -44,6 +63,14 @@ a:
     }
 
 
+    char tmpfile[] = "./inputXXXXXX";
+    int f;
+    if ((f = mkstemp(tmpfile)) < 0) {
+        perror("mkstemp");
+        exit(-1);
+    }
+    // close(f);
+
     // Fork the task for doing the map work.
     if ((pid = fork()) < 0) {
         perror("fork");
@@ -57,17 +84,58 @@ a:
             exit(-1);
         }
 
-        const char *p = str.c_str();
-        int len = str.size();
-        while (len > 0) {
-            size_t writelen = (MAXLINE < len ? MAXLINE : len);
-            if (write(sock, p, writelen) < 0) {
-                perror("write");
-                exit(-1);
-            }
-            p += writelen;
-            len -= writelen;
+        // Pipeline the JSON stream
+        Node *h = dlx->header;
+        Document d;
+        Pointer("/puzzle").Set(d, puzzle.c_str());
+        Pointer("/nCol").Set(d, dlx->nCol);
+        Pointer("/nRow").Set(d, dlx->nRow);
+        for (unsigned i = 0;  i < dlx->solutions.size(); i++) {
+            string s = "/solutions/" + to_string(i);
+            Pointer(s.c_str()).Set(d, dlx->solutions[i]);
         }
+
+        StringBuffer sb;
+        Writer<StringBuffer> writer(sb);
+        d.Accept(writer);
+        writeStr(sb.GetString(), sock); // writeStr will end with '\n'
+        writeStr(sb.GetString(), f); // for backup tasks
+
+        for (Node *col = h->right; col != h; col = col->right) {
+            Node *row = col;
+            do {
+                Document d_;
+            
+                Pointer("/matrix/nodeCount").Set(d_, row->nodeCount);
+                Pointer("/matrix/rowID").Set(d_, row->rowID);
+                Pointer("/matrix/colID").Set(d_, row->colID);
+                Pointer("/matrix/left").Set(d_, row->left->colID);
+                Pointer("/matrix/right").Set(d_, row->right->colID);
+                Pointer("/matrix/up").Set(d_, row->up->rowID);
+                Pointer("/matrix/down").Set(d_, row->down->rowID);
+
+                StringBuffer sb_;
+                Writer<StringBuffer> writer_(sb_);
+                d_.Accept(writer_);
+                writeStr(sb_.GetString(), sock); // writeStr end with '\n'
+                writeStr(sb_.GetString(), f); // for backup tasks
+
+                row = row->down;
+            } while (row != col);
+        }
+
+        if (h->right != h) {
+            Document d_;
+            Pointer("/front").Set(d_, h->right->colID);
+            Pointer("/back").Set(d_, h->left->colID);
+            StringBuffer sb_;
+            Writer<StringBuffer> writer_(sb_);
+            d_.Accept(writer_);
+            writeStr(sb_.GetString(), sock); // writeStr end with '\n'
+            writeStr(sb_.GetString(), f); // for backup tasks
+        }
+
+        close(f);
 
         if (shutdown(sock, SHUT_WR) < 0) {
             perror("shutdown");
@@ -89,13 +157,6 @@ a:
 
     // Parent process continued: record the process information and input data
     // for re-execute the backup tasks.
-
-    char tmpfile[] = "./inputXXXXXX";
-    int f;
-    if ((f = mkstemp(tmpfile)) < 0) {
-        perror("mkstemp");
-        exit(-1);
-    }
     close(f);
 
     time_t t = time(NULL);
@@ -114,16 +175,56 @@ a:
     taskinfo.sa = serv; // struct copy
     taskinfo.state = in_progress;
     tasklist.push_back(taskinfo);
-    ofstream o(tmpfile);
-    if (!o.is_open()) {
-        fprintf(stderr, "open %s error: %s\n", tmpfile, strerror(errno));
-        exit(-1);
-    }
-    o << str;
-    o.close();
+    // ofstream o(tmpfile);
+    // if (!o.is_open()) {
+    //     fprintf(stderr, "open %s error: %s\n", tmpfile, strerror(errno));
+    //     exit(-1);
+    // }
+    // o << str;
+    // o.close();
 
 }
 
-// static bool comp(sockinfo a, sockinfo b) {
-//     return (a.fd < b.fd);
-// }
+void dlxSerialize(string &str, DLX *dlx) {
+    Document d;
+    int g = 0;
+
+    Pointer("/puzzle").Set(d, puzzle.c_str());
+    Pointer("/nCol").Set(d, dlx->nCol);
+    Pointer("/nRow").Set(d, dlx->nRow);
+    for (unsigned i = 0;  i < dlx->solutions.size(); i++) {
+        string s = "/solutions/" + to_string(i);
+        Pointer(s.c_str()).Set(d, dlx->solutions[i]);
+    }
+
+    Node *h = dlx->header;
+    for (Node *col = h->right; col != h; col = col->right) {
+        Node *row = col;
+        do {
+            string id = "/matrix/" + to_string(g++);
+            
+            Pointer((id + "/nodeCount").c_str()).Set(d, row->nodeCount);
+            Pointer((id + "/rowID").c_str()).Set(d, row->rowID);
+            Pointer((id + "/colID").c_str()).Set(d, row->colID);
+            Pointer((id + "/left").c_str()).Set(d, row->left->colID);
+            Pointer((id + "/right").c_str()).Set(d, row->right->colID);
+            Pointer((id + "/up").c_str()).Set(d, row->up->rowID);
+            Pointer((id + "/down").c_str()).Set(d, row->down->rowID);
+
+            row = row->down;
+        } while (row != col);
+    }
+
+    if (h->right != h) {
+        Pointer("/front").Set(d, h->right->colID);
+        Pointer("/back").Set(d, h->left->colID);
+    }
+
+    StringBuffer sb;
+    // PrettyWriter<StringBuffer> writer(sb);
+    Writer<StringBuffer> writer(sb);
+    d.Accept(writer);
+    // puts(sb.GetString());
+    // o << sb.GetString() << endl;
+    str = string(sb.GetString());
+}

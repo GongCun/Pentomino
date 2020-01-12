@@ -29,7 +29,6 @@ using namespace rapidjson;
 
 extern int runs;
 extern string puzzle;
-extern void writeString(string&);
 extern void print_solve(ostream& o, vector<int>&);
 
 struct Node {
@@ -82,7 +81,8 @@ public:
 };
 
 void distribute(unsigned, DLX*);
-void dlxSerialize(string&, DLX*);
+// void dlxSerialize(string&, DLX*);
+extern void writeString(DLX*);
 
 enum State { idle = 0, in_progress, completed };
 typedef struct sockaddr_in SA;
