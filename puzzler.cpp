@@ -525,7 +525,7 @@ void init() {
 }
 
 
-extern void writeSocket(char *, string&);
+extern void writeSocket(char *, DLX *);
 // extern void waitSlave(void);
 // extern void initSock(void);
 
@@ -559,7 +559,7 @@ void waitSlave() {
 
 }
 
-void writeString(string& str) {
+void writeString(DLX *dlx) {
     /*
     sigset_t newmask, oldmask;
     sigemptyset(&newmask);
@@ -571,7 +571,7 @@ void writeString(string& str) {
     }*/
 
     // critical region
-    writeSocket(port, str);
+    writeSocket(port, dlx);
 
     // restore signal mask, will unblock SIGALRM/SIGCHLD
     /*
@@ -608,9 +608,10 @@ static void sig_alarm(int signo) {
         }
 
         auto v = *ptr;
-        if (v.state == in_progress && 
-                time(NULL) - v.start > timeout &&
-                v.backup == false) {
+        if (v.state == in_progress &&
+            time(NULL) - v.start > timeout &&
+            timeout > 0 &&
+            v.backup == false) {
 
 
             if (kill(v.pid, SIGTERM) < 0) {
@@ -788,6 +789,7 @@ int main(int argc, char *argv[]) {
         return 0;
     }
 
+    // sleep(30);
     // Slave process
     DLX dlx(cin, puzzle);
     if (output == NULL) {

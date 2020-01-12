@@ -201,81 +201,105 @@ DLX::DLX(Node*& h, int& nCol_, int& nRow_, vector<int>& solutions_) :
 DLX::DLX(istream& in, string& puzzle) {
     header = new Node();
 
-    istreambuf_iterator<char> eos;
-    string s(istreambuf_iterator<char>(in), eos);
-    Document d;
-    d.Parse(s.c_str());
+    // istreambuf_iterator<char> eos;
+    // string s(istreambuf_iterator<char>(in), eos);
+    // Document d;
+    // d.Parse(s.c_str());
+    // matrix = vector< vector<Node> >(nRow, vector<Node>(nCol));
+    Node x;
+    x.left = NULL;
+    x.right = NULL;
+    x.up = NULL;
+    x.down = NULL;
+    x.column = NULL;
+    x.rowID = -1;
+    x.colID = -1;
+    x.nodeCount = -1;
+    cerr << "x.nodeCount = " << x.nodeCount << endl;
 
-    puzzle = string(d["puzzle"].GetString());
-    nCol = d["nCol"].GetInt();
-    nRow = d["nRow"].GetInt();
+    matrix = vector< vector<Node> >(nRow);
+    for (auto &v : matrix)
+        v = vector<Node>(nCol, x);
+    cerr << "nodeCount = " << matrix[0][0].nodeCount << endl;
+    cerr << "address = " << &matrix[0][0] << endl;
 
-    matrix = vector< vector<Node> >(nRow, vector<Node>(nCol));
+    string line;
+    while (getline(in, line)) {
+        Document d;
+        d.Parse(line.c_str());
 
-    Value::ConstMemberIterator itr;
+        Value::ConstMemberIterator itr;
 
-    itr = d.FindMember("solutions");
-    if (itr != d.MemberEnd()){
-        const Value& v = d["solutions"];
-        for (SizeType i = 0; i < v.Size(); i++)
-            solutions.push_back(v[i].GetInt());
-    }
-
-    const Value& m = d["matrix"];
-    for (SizeType i = 0; i < m.Size(); i++) {
-        assert(m[i].IsObject());
-        int nodeCount, rowID, colID, left, right, up, down;
-        for (itr = m[i].MemberBegin(); itr != m[i].MemberEnd(); ++itr) {
-            // printf("name: %s; value: %d\n",
-                   // itr->name.GetString(), itr->value.GetInt());
-            if ((string(itr->name.GetString())) == "nodeCount")
-                nodeCount = itr->value.GetInt();
-            if ((string(itr->name.GetString())) == "rowID")
-                rowID = itr->value.GetInt();
-            if ((string(itr->name.GetString())) == "colID")
-                colID = itr->value.GetInt();
-            if ((string(itr->name.GetString())) == "left")
-                left = itr->value.GetInt();
-            if ((string(itr->name.GetString())) == "right")
-                right = itr->value.GetInt();
-            if ((string(itr->name.GetString())) == "up")
-                up = itr->value.GetInt();
-            if ((string(itr->name.GetString())) == "down")
-                down = itr->value.GetInt();
+        itr = d.FindMember("puzzle");
+        if (itr != d.MemberEnd()){
+            puzzle = string(d["puzzle"].GetString());
         }
-        Node &n = matrix[rowID][colID];
-        n.nodeCount = nodeCount;
-        n.rowID = rowID;
-        n.colID = colID;
-        n.column = &matrix[0][colID];
-        n.left = &matrix[rowID][left];
-        n.right = &matrix[rowID][right];
-        n.up = &matrix[up][colID];
-        n.down = &matrix[down][colID];
-        // cout << "nodeCount: " << nodeCount << endl;
-        // cout << "rowID: " << rowID << endl;
-        // cout << "colID: " << colID << endl;
-        // cout << "left: " << left << endl;
-        // cout << "right: " << right << endl;
-        // cout << "down: " << down << endl;
-        // cout << "up: " << up << endl;
-        // cout << endl;
-    }
 
-    itr = d.FindMember("front");
-    if (itr != d.MemberEnd()) {
-        header->right = &matrix[0][itr->value.GetInt()];
-        matrix[0][itr->value.GetInt()].left = header;
-    } else {
-        header->right = header;
-    }
+        itr = d.FindMember("nCol");
+        if (itr != d.MemberEnd()) {
+            nCol = d["nCol"].GetInt();
+        }
 
-    itr = d.FindMember("back");
-    if (itr != d.MemberEnd()) {
-        header->left = &matrix[0][itr->value.GetInt()];
-        matrix[0][itr->value.GetInt()].right = header;
-    } else {
-        header->left = header;
+        itr = d.FindMember("nRow");
+        if (itr != d.MemberEnd()) {
+            nRow = d["nRow"].GetInt();
+        }
+
+        itr = d.FindMember("solutions");
+        if (itr != d.MemberEnd()) {
+            const Value& v = d["solutions"];
+            for (SizeType i = 0; i < v.Size(); i++)
+                solutions.push_back(v[i].GetInt());
+        }
+
+        itr = d.FindMember("matrix");
+        if (itr != d.MemberEnd()) {
+            const Value& m = d["matrix"];
+            int nodeCount, rowID, colID, left, right, up, down;
+            for (Value::ConstMemberIterator i = m.MemberBegin();
+                 i != m.MemberEnd(); ++i) {
+                if ((string(itr->name.GetString())) == "nodeCount")
+                    nodeCount = itr->value.GetInt();
+                if ((string(itr->name.GetString())) == "rowID")
+                    rowID = itr->value.GetInt();
+                if ((string(itr->name.GetString())) == "colID")
+                    colID = itr->value.GetInt();
+                if ((string(itr->name.GetString())) == "left")
+                    left = itr->value.GetInt();
+                if ((string(itr->name.GetString())) == "right")
+                    right = itr->value.GetInt();
+                if ((string(itr->name.GetString())) == "up")
+                    up = itr->value.GetInt();
+                if ((string(itr->name.GetString())) == "down")
+                    down = itr->value.GetInt();
+            }
+            Node &n = matrix[rowID][colID];
+            n.nodeCount = nodeCount;
+            n.rowID = rowID;
+            n.colID = colID;
+            n.column = &matrix[0][colID];
+            n.left = &matrix[rowID][left];
+            n.right = &matrix[rowID][right];
+            n.up = &matrix[up][colID];
+            n.down = &matrix[down][colID];
+        }
+
+        itr = d.FindMember("front");
+        if (itr != d.MemberEnd()) {
+            header->right = &matrix[0][itr->value.GetInt()];
+            matrix[0][itr->value.GetInt()].left = header;
+        } else {
+            header->right = header;
+        }
+
+        itr = d.FindMember("back");
+        if (itr != d.MemberEnd()) {
+            header->left = &matrix[0][itr->value.GetInt()];
+            matrix[0][itr->value.GetInt()].right = header;
+        } else {
+            header->left = header;
+        }
+
     }
 
 }
@@ -324,8 +348,8 @@ void distribute(unsigned k, DLX* root) {
                     exit(-1);
                 }
 
-                dlxSerialize(str, q);
-                writeString(str);
+                // dlxSerialize(str, q);
+                writeString(q);
 
                 if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0) {
                     perror("sigprocmask");
@@ -363,48 +387,4 @@ void distribute(unsigned k, DLX* root) {
         }
         level++;
     }
-}
-
-void dlxSerialize(string &str, DLX *dlx) {
-    Document d;
-    int g = 0;
-
-    Pointer("/puzzle").Set(d, puzzle.c_str());
-    Pointer("/nCol").Set(d, dlx->nCol);
-    Pointer("/nRow").Set(d, dlx->nRow);
-    for (unsigned i = 0;  i < dlx->solutions.size(); i++) {
-        string s = "/solutions/" + to_string(i);
-        Pointer(s.c_str()).Set(d, dlx->solutions[i]);
-    }
-
-    Node *h = dlx->header;
-    for (Node *col = h->right; col != h; col = col->right) {
-        Node *row = col;
-        do {
-            string id = "/matrix/" + to_string(g++);
-            
-            Pointer((id + "/nodeCount").c_str()).Set(d, row->nodeCount);
-            Pointer((id + "/rowID").c_str()).Set(d, row->rowID);
-            Pointer((id + "/colID").c_str()).Set(d, row->colID);
-            Pointer((id + "/left").c_str()).Set(d, row->left->colID);
-            Pointer((id + "/right").c_str()).Set(d, row->right->colID);
-            Pointer((id + "/up").c_str()).Set(d, row->up->rowID);
-            Pointer((id + "/down").c_str()).Set(d, row->down->rowID);
-
-            row = row->down;
-        } while (row != col);
-    }
-
-    if (h->right != h) {
-        Pointer("/front").Set(d, h->right->colID);
-        Pointer("/back").Set(d, h->left->colID);
-    }
-
-    StringBuffer sb;
-    // PrettyWriter<StringBuffer> writer(sb);
-    Writer<StringBuffer> writer(sb);
-    d.Accept(writer);
-    // puts(sb.GetString());
-    // o << sb.GetString() << endl;
-    str = string(sb.GetString());
 }
