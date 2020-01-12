@@ -74,6 +74,7 @@ Node *DLX::leastOne(void) {
         if (h->nodeCount < min->nodeCount)
             min = h;
         h = h->right;
+        // cerr << "hello" << endl;
     } while (h != header);
 
     return min;
@@ -200,89 +201,31 @@ DLX::DLX(Node*& h, int& nCol_, int& nRow_, vector<int>& solutions_) :
 //
 DLX::DLX(istream& in, string& puzzle) {
     header = new Node();
-
-    // istreambuf_iterator<char> eos;
-    // string s(istreambuf_iterator<char>(in), eos);
-    // Document d;
-    // d.Parse(s.c_str());
-    // matrix = vector< vector<Node> >(nRow, vector<Node>(nCol));
-    Node x;
-    x.left = NULL;
-    x.right = NULL;
-    x.up = NULL;
-    x.down = NULL;
-    x.column = NULL;
-    x.rowID = -1;
-    x.colID = -1;
-    x.nodeCount = -1;
-    cerr << "x.nodeCount = " << x.nodeCount << endl;
-
-    matrix = vector< vector<Node> >(nRow);
-    for (auto &v : matrix)
-        v = vector<Node>(nCol, x);
-    cerr << "nodeCount = " << matrix[0][0].nodeCount << endl;
-    cerr << "address = " << &matrix[0][0] << endl;
-
     string line;
+    Document d;
+
+    // Get the nCol, nRow, etc. to build the matrix first.
+    getline(in, line);
+    // cerr << "line " << line << endl;
+    d.Parse(line.c_str());
+    puzzle = string(d["puzzle"].GetString());
+    nCol = d["nCol"].GetInt();
+    nRow = d["nRow"].GetInt();
+    matrix = vector< vector<Node> >(nRow, vector<Node>(nCol));
+
+    Value::ConstMemberIterator itr;
+    itr = d.FindMember("solutions");
+    if (itr != d.MemberEnd()) {
+        const Value& v = d["solutions"];
+        for (SizeType i = 0; i < v.Size(); i++)
+            solutions.push_back(v[i].GetInt());
+    }
+
+
     while (getline(in, line)) {
-        Document d;
+        // cerr << "line " << line << endl;
+        // Document d;
         d.Parse(line.c_str());
-
-        Value::ConstMemberIterator itr;
-
-        itr = d.FindMember("puzzle");
-        if (itr != d.MemberEnd()){
-            puzzle = string(d["puzzle"].GetString());
-        }
-
-        itr = d.FindMember("nCol");
-        if (itr != d.MemberEnd()) {
-            nCol = d["nCol"].GetInt();
-        }
-
-        itr = d.FindMember("nRow");
-        if (itr != d.MemberEnd()) {
-            nRow = d["nRow"].GetInt();
-        }
-
-        itr = d.FindMember("solutions");
-        if (itr != d.MemberEnd()) {
-            const Value& v = d["solutions"];
-            for (SizeType i = 0; i < v.Size(); i++)
-                solutions.push_back(v[i].GetInt());
-        }
-
-        itr = d.FindMember("matrix");
-        if (itr != d.MemberEnd()) {
-            const Value& m = d["matrix"];
-            int nodeCount, rowID, colID, left, right, up, down;
-            for (Value::ConstMemberIterator i = m.MemberBegin();
-                 i != m.MemberEnd(); ++i) {
-                if ((string(itr->name.GetString())) == "nodeCount")
-                    nodeCount = itr->value.GetInt();
-                if ((string(itr->name.GetString())) == "rowID")
-                    rowID = itr->value.GetInt();
-                if ((string(itr->name.GetString())) == "colID")
-                    colID = itr->value.GetInt();
-                if ((string(itr->name.GetString())) == "left")
-                    left = itr->value.GetInt();
-                if ((string(itr->name.GetString())) == "right")
-                    right = itr->value.GetInt();
-                if ((string(itr->name.GetString())) == "up")
-                    up = itr->value.GetInt();
-                if ((string(itr->name.GetString())) == "down")
-                    down = itr->value.GetInt();
-            }
-            Node &n = matrix[rowID][colID];
-            n.nodeCount = nodeCount;
-            n.rowID = rowID;
-            n.colID = colID;
-            n.column = &matrix[0][colID];
-            n.left = &matrix[rowID][left];
-            n.right = &matrix[rowID][right];
-            n.up = &matrix[up][colID];
-            n.down = &matrix[down][colID];
-        }
 
         itr = d.FindMember("front");
         if (itr != d.MemberEnd()) {
@@ -298,6 +241,49 @@ DLX::DLX(istream& in, string& puzzle) {
             matrix[0][itr->value.GetInt()].right = header;
         } else {
             header->left = header;
+        }
+
+        // Value::ConstMemberIterator itr;
+        itr = d.FindMember("matrix");
+        if (itr != d.MemberEnd()) {
+
+            const Value& m = d["matrix"];
+            int nodeCount, rowID, colID, left, right, up, down;
+            for (itr = m.MemberBegin(); itr != m.MemberEnd(); ++itr) {
+                if ((string(itr->name.GetString())) == "nodeCount") {
+                    nodeCount = itr->value.GetInt();
+                }
+                if ((string(itr->name.GetString())) == "rowID") {
+                    rowID = itr->value.GetInt();
+                }
+                if ((string(itr->name.GetString())) == "colID") {
+                    colID = itr->value.GetInt();
+                }
+                if ((string(itr->name.GetString())) == "left") {
+                    left = itr->value.GetInt();
+                }
+                if ((string(itr->name.GetString())) == "right") {
+                    right = itr->value.GetInt();
+                }
+                if ((string(itr->name.GetString())) == "up") {
+                    up = itr->value.GetInt();
+                }
+                if ((string(itr->name.GetString())) == "down") {
+                    down = itr->value.GetInt();
+                }
+            }
+
+            // cerr << "rowID " << rowID << " colID " << colID << endl;
+
+            Node &n = matrix[rowID][colID];
+            n.nodeCount = nodeCount;
+            n.rowID = rowID;
+            n.colID = colID;
+            n.column = &matrix[0][colID];
+            n.left = &matrix[rowID][left];
+            n.right = &matrix[rowID][right];
+            n.up = &matrix[up][colID];
+            n.down = &matrix[down][colID];
         }
 
     }

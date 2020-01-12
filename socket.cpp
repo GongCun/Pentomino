@@ -95,11 +95,6 @@ a:
             Pointer(s.c_str()).Set(d, dlx->solutions[i]);
         }
 
-        if (h->right != h) {
-            Pointer("/front").Set(d, h->right->colID);
-            Pointer("/back").Set(d, h->left->colID);
-        }
-
         StringBuffer sb;
         Writer<StringBuffer> writer(sb);
         d.Accept(writer);
@@ -127,6 +122,17 @@ a:
 
                 row = row->down;
             } while (row != col);
+        }
+
+        if (h->right != h) {
+            Document d_;
+            Pointer("/front").Set(d_, h->right->colID);
+            Pointer("/back").Set(d_, h->left->colID);
+            StringBuffer sb_;
+            Writer<StringBuffer> writer_(sb_);
+            d_.Accept(writer_);
+            writeStr(sb_.GetString(), sock); // writeStr end with '\n'
+            writeStr(sb_.GetString(), f); // for backup tasks
         }
 
         close(f);
