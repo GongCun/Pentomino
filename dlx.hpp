@@ -48,7 +48,7 @@ class DLX {
 public:
     Node *header;
     int nCol, nRow;
-    vector< vector<Node> > matrix;
+    vector< vector<Node*> > matrix;
     vector<int> solutions;
 
     DLX(vector< vector<bool> >& p_);
@@ -59,8 +59,10 @@ public:
         if (!header) delete header;
         header = NULL;
         for (auto &v: matrix)
-            v.clear();
-        matrix.clear();
+            for (auto &i : v)
+                delete i;
+            // v.clear();
+        // matrix.clear();
     }
 
     // void free() {

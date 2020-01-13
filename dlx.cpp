@@ -8,19 +8,23 @@ DLX::DLX(vector< vector<bool> >& p_) {
     nCol = p_[0].size();
     header = new Node();
     
-    matrix = vector< vector<Node> >(p_.size());
+    /*
+    matrix = vector< vector<Node*> >(p_.size());
     for (auto &v : matrix)
-        v = vector<Node>(nCol);
+        v = vector<Node*>(nCol); */
+    for (auto i = 0; i < nRow; i++)
+        for (auto j = 0; j < nCol; j++)
+            matrix[i][j] = new Node;
 
     for (auto i = 0; i < nRow; i++) {
         for (auto j = 0; j < nCol; j++) {
             if (p_[i][j]) {
                 int a, b;
-                if (i) matrix[0][j].nodeCount += 1;
+                if (i) matrix[0][j]->nodeCount += 1;
 
-                matrix[i][j].column = &matrix[0][j];
-                matrix[i][j].rowID = i;
-                matrix[i][j].colID = j;
+                matrix[i][j]->column = matrix[0][j];
+                matrix[i][j]->rowID = i;
+                matrix[i][j]->colID = j;
 
                 // Link the node with neighbors
 
@@ -29,40 +33,40 @@ DLX::DLX(vector< vector<bool> >& p_) {
                 do {
                     b = getLeft(b);
                 } while (!p_[a][b] && b != j);
-                matrix[i][j].left = &matrix[i][b];
+                matrix[i][j]->left = matrix[i][b];
 
                 // Right pointer
                 a = i, b = j;
                 do {
                     b = getRight(b);
                 } while (!p_[a][b] && b != j);
-                matrix[i][j].right = &matrix[i][b];
+                matrix[i][j]->right = matrix[i][b];
 
                 // Up pointer
                 a = i, b = j;
                 do {
                     a = getUp(a);
                 } while (!p_[a][b] && a != i);
-                matrix[i][j].up = &matrix[a][j];
+                matrix[i][j]->up = matrix[a][j];
 
                 // Down pointer
                 a = i, b = j;
                 do {
                     a = getDown(a);
                 } while (!p_[a][b] && a != i);
-                matrix[i][j].down = &matrix[a][j];
+                matrix[i][j]->down = matrix[a][j];
             }
         }
     }
 
     // Link header right pointer to column header of first column
-    header->right = &matrix[0][0];
+    header->right = matrix[0][0];
 
     // Link header left pointer to column header of last column
-    header->left = &matrix[0][nCol - 1];
+    header->left = matrix[0][nCol - 1];
 
-    matrix[0][0].left = header;
-    matrix[0][nCol - 1].right = header;
+    matrix[0][0]->left = header;
+    matrix[0][nCol - 1]->right = header;
 
 }
 
