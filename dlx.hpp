@@ -58,17 +58,14 @@ public:
     ~DLX() {
         if (!header) delete header;
         header = NULL;
-        for (auto &v: matrix)
-            for (auto &i : v)
+        for (auto &v: matrix) {
+            for (auto &i : v) {
                 delete i;
-            // v.clear();
-        // matrix.clear();
+                i = NULL;
+            }
+        }
     }
 
-    // void free() {
-    //     this->DLX::~DLX();
-    // }
-    
     Node *leastOne(void);
     void cover(Node *);
     void uncover(Node *);
@@ -99,4 +96,9 @@ struct taskinfo {
     bool    backup;
 };
 extern vector<taskinfo>tasklist;
+
+inline Node *mynew(Node **p) {
+    if (*p == NULL) *p = new Node;
+    return *p;
+}
 #endif
