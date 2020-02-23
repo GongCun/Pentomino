@@ -318,9 +318,6 @@ void distribute(unsigned k, DLX* root) {
         auto t = last - cur;
         
         cerr << "level count = " << last - cur << endl;
-        char taskenv[64];
-        sprintf(taskenv, "%d", last - cur);
-        setenv("ENV_TASKS", taskenv, 1);
 
         while (cur < last) {
 

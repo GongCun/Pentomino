@@ -141,12 +141,6 @@ a:
             perror("shutdown");
             exit(-1);
         }
-        /*
-        if (write(sock, "\x0f", 1) != 1) {
-            perror("write eof");
-            exit(-1);
-        }
-        */
 
         // Waiting the task finish
         fd_set saveset, rset;
