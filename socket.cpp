@@ -141,16 +141,37 @@ a:
             perror("shutdown");
             exit(-1);
         }
-
-        // Waiting the task finish
-        fd_set rset;
-        FD_ZERO(&rset);
-        FD_SET(sock, &rset);
-        // suppose task process won't say anything
-        if (select(sock + 1, &rset, NULL, NULL, NULL) < 0) {
-            perror("select");
+        /*
+        if (write(sock, "\x0f", 1) != 1) {
+            perror("write eof");
             exit(-1);
         }
+        */
+
+        // Waiting the task finish
+        fd_set saveset, rset;
+        FD_ZERO(&saveset);
+        FD_SET(sock, &saveset);
+        int n;
+        char buf[MAXLINE];
+
+        for ( ; ; ) {
+            rset = saveset;
+            if (select(sock + 1, &rset, NULL, NULL, NULL) < 0) {
+                perror("select");
+                exit(-1);
+            }
+            if (FD_ISSET(sock, &rset)) {
+                n = read(sock, buf, MAXLINE);
+                if (n < 0) {
+                    perror("read buf");
+                    exit(-1);
+                } else if (n == 0) {
+                    break;
+                }
+            }
+        }
+        
         exit(0);
     } // child process exited
 
