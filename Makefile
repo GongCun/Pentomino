@@ -1,9 +1,7 @@
 CC = g++
-CFLAGS = -g -Wall --std=c++0x
-# CFLAGS = -g -Wall --std=c++0x
-# CFLAGS = -Ofast --std=c++0x
-# CFLAGS = -Ofast --std=c++0x -maix64
-PROG = puzzler sudoku
+#CFLAGS = -g -Wall --std=c++0x
+CFLAGS = -Ofast --std=c++0x
+PROG = puzzler
 TEMPFILES = core core.* *.o temp.* *.out *~
 
 all: $(PROG)
